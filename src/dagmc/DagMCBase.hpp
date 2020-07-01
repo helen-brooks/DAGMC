@@ -81,8 +81,6 @@ class DagMCBase {
 
   // Return the version of this library
   static float version(std::string* version_string = NULL);
-  // Get subversion revision of this file (DagMC.hpp)
-  static unsigned int interface_revision();
 
   // SECTION I: Geometry Initialization
   virtual ErrorCode load_file(const char* cfile) = 0;

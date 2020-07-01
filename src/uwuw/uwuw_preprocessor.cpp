@@ -10,6 +10,7 @@ uwuw_preprocessor::uwuw_preprocessor(std::string material_library_filename, std:
   ncr = new name_concatenator();
 
   // make new DAGMC instance
+  // TODO - use unique pointer instead of new?
   DAG = new moab::DagMC();
 
   // load the materials

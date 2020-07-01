@@ -3,7 +3,7 @@
 
 #include "moab/Interface.hpp"
 #include "moab/CartVect.hpp"
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 #include "moab/Types.hpp"
 
 using moab::DagMC;

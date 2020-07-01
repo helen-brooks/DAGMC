@@ -2,7 +2,7 @@
 #define SRC_DAGMC_DAGMCMETADATA_HPP_
 #include <set>
 #include <iostream>
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 
 class dagmcMetaData {
  public:

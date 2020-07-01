@@ -2,7 +2,7 @@
 
 #include "moab/Interface.hpp"
 #include "moab/Core.hpp"
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 
 #include <iostream>
 

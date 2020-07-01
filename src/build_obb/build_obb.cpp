@@ -1,4 +1,4 @@
-#include <DagMC.hpp>
+#include <DagMCmoab.hpp>
 #include "moab/ProgOptions.hpp"
 
 int main(int argc, char* argv[]) {

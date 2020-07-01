@@ -66,7 +66,7 @@
 #include <set>
 #include <map>
 
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 using namespace moab;
 
 

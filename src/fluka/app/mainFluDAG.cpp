@@ -9,7 +9,7 @@
 //---------------------------------------------------------------------------//
 #include "fluka_funcs.h"
 
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 #include "dagmcmetadata.hpp"
 
 #include <cstring>

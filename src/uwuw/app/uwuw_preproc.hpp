@@ -4,7 +4,7 @@
 
 #include "uwuw.hpp"
 #include "pyne.h"
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 
 class uwuw_preprocessor {
  public:

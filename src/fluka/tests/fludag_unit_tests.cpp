@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 #include "moab/Interface.hpp"
 #include "fluka_funcs.h"
 

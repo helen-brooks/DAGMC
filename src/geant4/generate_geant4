@@ -879,7 +879,7 @@ def _setup_dagspecific_source(dag_volume_names, dag_materials, material_dict, da
     file_contents.append('#include "G4PSTrackLength.hh"\n')
     file_contents.append('\n')
     file_contents.append('#include "DagSolid.hh"\n')
-    file_contents.append('#include "DagMC.hpp"\n')
+    file_contents.append('#include "DagMCmoab.hpp"\n')
     file_contents.append('\n')
     file_contents.append('using namespace moab;\n')
     file_contents.append('\n')

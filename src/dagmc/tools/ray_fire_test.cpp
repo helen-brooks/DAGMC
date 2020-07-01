@@ -1,6 +1,6 @@
 #include "moab/Interface.hpp"
 #include "moab/Core.hpp"
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 #include "MBTagConventions.hpp"
 #include "moab/CartVect.hpp"
 

@@ -11,7 +11,7 @@
 #include "moab/Types.hpp"
 #include "moab/Interface.hpp"
 #include "moab/CartVect.hpp"
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 #include "pyne.h"
 #include "uwuw.hpp"
 

@@ -5,9 +5,8 @@
 
 #include "uwuw.hpp"
 #include "pyne.h"
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 #include "name_concatenator.hpp"
-
 #include "dagmcmetadata.hpp"
 
 /// convenience struct for the tally information

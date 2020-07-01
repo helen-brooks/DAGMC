@@ -33,7 +33,7 @@
 
 #include "DagSolid.hh"
 #include "moab/Interface.hpp"
-#include "DagMC.hpp"
+#include "DagMCmoab.hpp"
 
 #include "DagSolidMaterial.hh"
 #include "DagSolidTally.hh"
