@@ -9,9 +9,9 @@
 #include <limits>
 #include <stdlib.h>
 
-#define CHKERR if (MB_SUCCESS != rval) return rval
+#define CHKERR if (DAG_SUCCESS != rval) return rval
 
-using namespace moab;
+using namespace DAGMC;
 
 ErrorCode test_pt_volume(DagMC& dagmc, int volID, double xxx, double yyy, double zzz, int& inside,
                          double uuu, double vvv, double www) {
@@ -24,7 +24,7 @@ ErrorCode test_pt_volume(DagMC& dagmc, int volID, double xxx, double yyy, double
   rval = dagmc.point_in_volume(vol, xyz, inside, uvw);
   CHKERR;
 
-  return MB_SUCCESS;
+  return DAG_SUCCESS;
 
 }
 
@@ -37,7 +37,7 @@ ErrorCode test_pt_volume_slow(DagMC& dagmc, int volID, double xxx, double yyy, d
   rval = dagmc.point_in_volume_slow(vol, xyz, inside);
   CHKERR;
 
-  return MB_SUCCESS;
+  return DAG_SUCCESS;
 
 }
 
@@ -75,12 +75,12 @@ int main(int argc, char* argv[]) {
 
   DagMC dagmc{};
   rval = dagmc.load_file(filename);
-  if (MB_SUCCESS != rval) {
+  if (DAG_SUCCESS != rval) {
     std::cerr << "Failed to load file." << std::endl;
     return 2;
   }
   rval = dagmc.init_OBBTree();
-  if (MB_SUCCESS != rval) {
+  if (DAG_SUCCESS != rval) {
     std::cerr << "Failed to initialize DagMC." << std::endl;
     return 2;
   }
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
   int errors = 0;
 
   rval = test_pt_volume(dagmc, volID, xxx, yyy, zzz, inside, uuu, vvv, www);
-  if (MB_SUCCESS != rval) {
+  if (DAG_SUCCESS != rval) {
     std::cerr << "Failed to test point in volume [fast]." << std::endl;
     return 3;
   }
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
             << volID << std::endl;
 
   rval = test_pt_volume_slow(dagmc, volID, xxx, yyy, zzz, inside);
-  if (MB_SUCCESS != rval) {
+  if (DAG_SUCCESS != rval) {
     std::cerr << "Failed to test point in volume [slow]." << std::endl;
     return 3;
   }

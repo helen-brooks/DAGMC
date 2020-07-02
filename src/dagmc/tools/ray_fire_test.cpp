@@ -34,7 +34,7 @@ using namespace moab;
 void get_time_mem(double& tot_time, double& user_time,
                   double& sys_time, double& tot_mem);
 
-void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DagMC& dagmc,
+void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DAGMC::DagMC& dagmc,
                  OrientedBoxTreeTool::TrvStats* trv_stats, EntityHandle tree_root);
 
 static const double PI = acos(-1.0);
@@ -227,14 +227,15 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  std::cout << "DagMC Version: " << DagMC::version()
-            << ", svn revision: " << DagMC::interface_revision() << std::endl;
+  std::cout << "DagMC Version: " << DAGMC::DagMC::version()
+            << ", svn revision: " << DAGMC::DagMC::interface_revision() << std::endl;
 
   if (!filename) {
     usage("No filename specified", 0, argv[0]);
   }
 
-  ErrorCode rval;
+  moab::ErrorCode mbcode;
+  DAGMC::ErrorCode dagcode;
   EntityHandle surf = 0, vol = 0;
   double dist;
 
@@ -243,15 +244,15 @@ int main(int argc, char* argv[]) {
     trv_stats = new OrientedBoxTreeTool::TrvStats;
   }
 
-  DagMC dagmc{};
-  rval = dagmc.load_file(filename);
-  if (MB_SUCCESS != rval) {
+  DAGMC::DagMC dagmc{};
+  dagcode = dagmc.load_file(filename);
+  if (DAGMC::DAG_SUCCESS != dagcode) {
     std::cerr << "Failed to load file '" << filename << "'" << std::endl;
     return 2;
   }
 
-  rval = dagmc.init_OBBTree();
-  if (MB_SUCCESS != rval) {
+  dagcode = dagmc.init_OBBTree();
+  if (DAGMC::DAG_SUCCESS != dagcode) {
     std::cerr << "Failed to initialize DagMC." << std::endl;
     return 2;
   }
@@ -272,9 +273,9 @@ int main(int argc, char* argv[]) {
       std::cout << " Ray: point = " << ray.p << " dir = " << ray.v << std::endl;
 
       // added ray orientation
-      rval = dagmc.ray_fire(vol, ray.p.array(), ray.v.array(), surf, dist, NULL, 0, 1, trv_stats);
+      dagcode = dagmc.ray_fire(vol, ray.p.array(), ray.v.array(), surf, dist, NULL, 0, 1, trv_stats);
 
-      if (MB_SUCCESS != rval) {
+      if (DAGMC::DAG_SUCCESS != dagcode) {
         std::cerr << "ERROR: ray_fire() failed!" << std::endl;
         return 2;
       }
@@ -364,8 +365,8 @@ int main(int argc, char* argv[]) {
 
   /* Gather OBB tree stats and make final reports */
   EntityHandle root;
-  ErrorCode result = dagmc.get_root(vol, root);
-  if (MB_SUCCESS != result) {
+  DAGMC::ErrorCode result = dagmc.get_root(vol, root);
+  if (DAGMC::DAG_SUCCESS != result) {
     std::cerr << "Trouble getting tree stats." << std::endl;
     return 2;
   }
@@ -508,7 +509,7 @@ void moab_memory_estimates(Interface* mbi, unsigned long long& moab_data_bytes, 
 
 #define DICT_VAL(X) out << "'" #X "':" << X << "," << std::endl;
 #define DICT_VAL_STR(X) out << "'" #X  "':'" << X << "'," << std::endl;
-void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DagMC& dagmc,
+void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DAGMC::DagMC& dagmc,
                  OrientedBoxTreeTool::TrvStats* trv_stats, EntityHandle tree_root) {
   std::ofstream out(pyfile);
   out.precision(14);

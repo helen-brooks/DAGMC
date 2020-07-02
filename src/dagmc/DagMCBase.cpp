@@ -1,25 +1,6 @@
 // This file was created by H Brooks on 29/06/2020
 #include "DagMCBase.hpp"
 
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <limits>
-//#include <algorithm>
-#include <set>
-#include <climits>
-
-//#include <ctype.h>
-//#include <string.h>
-//#include <stdlib.h>
-//#include <stdio.h>
-
-//#include <math.h>
-//#ifndef M_PI  /* windows */
-//# define M_PI 3.14159265358979323846
-//#endif
-
 using namespace DAGMC;
 
 // *****************************************************************************
@@ -31,6 +12,26 @@ float DagMCBase::version(std::string* version_string) {
   if (NULL != version_string)
     *version_string = std::string("DagMC version ") + std::string(DAGMC_VERSION_STRING);
   return DAGMC_VERSION;
+}
+
+// initialise the obb tree
+ErrorCode DagMCBase::init_OBBTree() {
+
+  // find all geometry sets
+  errHandler->checkSetErr(find_geomsets(),
+                          "Could not find the geometry sets");
+
+  // implicit complement
+  errHandler->checkSetErr(setup_impl_compl(),
+                          "Failed to setup the implicit compliment");
+
+  // build obbs
+  errHandler->checkSetErr(setup_obbs(), "Failed to setup the OBBs");
+
+  // setup indices
+  errHandler->checkSetErr(setup_indices(), "Failed to setup problem indices");
+
+  return DAG_SUCCESS;
 }
 
 // helper function to load the existing contents of a MOAB instance into DAGMC

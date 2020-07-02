@@ -11,14 +11,14 @@ uwuw_preprocessor::uwuw_preprocessor(std::string material_library_filename, std:
 
   // make new DAGMC instance
   // TODO - use unique pointer instead of new?
-  DAG = new moab::DagMC();
+  DAG = new DAGMC::DagMC();
 
   // load the materials
   material_library = mat_lib.load_pyne_materials(material_library_filename, matlib_hdf5_path);
 
   // load the material objects
   // load the dag file
-  moab::ErrorCode rval = DAG->load_file(dagmc_filename.c_str());
+  DAGMC::ErrorCode rval = DAG->load_file(dagmc_filename.c_str());
 
   // do the minimal DAGMC initialisation
   rval = DAG->setup_impl_compl();
@@ -355,7 +355,7 @@ tally_info uwuw_preprocessor::make_tally_groupname(std::string tally_props,
   check_tally_props(particle, tally_type, dimension, entity_id);
 
   double size = 0.0; // the area or volume of the entity
-  moab::ErrorCode rval;
+  DAGMC::ErrorCode rval;
   std::string entity_type;
   if (dimension == 3) {
     rval = DAG->measure_volume(entity, size);

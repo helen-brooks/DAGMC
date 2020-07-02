@@ -4,7 +4,7 @@
 #include <algorithm>
 
 // constructor for metadata class
-dagmcMetaData::dagmcMetaData(moab::DagMC* dag_ptr,
+dagmcMetaData::dagmcMetaData(DAGMC::DagMC* dag_ptr,
                              bool verbosity,
                              bool require_density_present)
   : DAG(dag_ptr),
@@ -141,6 +141,9 @@ void dagmcMetaData::parse_material_data() {
         std::cerr << "Please check your material assignments " << cellid << std::endl;
         exit(EXIT_FAILURE);
       }
+    } else if (material_props.size() == 0) {
+      std::cerr << "Material props is empty" << std::endl;
+      exit(EXIT_FAILURE);
     } else {
       // because of how the data are inserted into the map, there is always
       // at least one entry, "" if nothing is found
@@ -395,11 +398,11 @@ bool remove_duplicates) {
   int num_entities = DAG->num_entities(dimension);
 
   // parse data from geometry
-  moab::ErrorCode rval = DAG->parse_properties(metadata_keywords,
+  DAGMC::ErrorCode rval = DAG->parse_properties(metadata_keywords,
                                                keyword_synonyms,
                                                delimiters.c_str());
 
-  if (moab::MB_SUCCESS != rval) {
+  if (DAGMC::DAG_SUCCESS != rval) {
     std::cerr << "DAGMC failed to parse metadata properties" <<  std::endl;
     exit(EXIT_FAILURE);
   }

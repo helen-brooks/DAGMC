@@ -6,11 +6,9 @@
 
 #include <iostream>
 
-using namespace moab;
+using namespace DAGMC;
 
-using moab::DagMC;
-
-moab::DagMC* DAG;
+DagMC* DAG;
 
 static const char input_file[] = "test_geom.h5m";
 
@@ -20,13 +18,13 @@ class DagmcSimpleTest : public ::testing::Test {
   virtual void TearDown() {}
 };
 
-TEST_F(DagmcSimpleTest, dagmc_load_file) {
+TEST_F(DagmcSimpleTest, DAG_load_file) {
   DAG = new DagMC();
   ErrorCode rval = DAG->load_file(input_file); // open the Dag file
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
-TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc) {
+TEST_F(DagmcSimpleTest, DAG_load_file_dagmc) {
   /* 1 - Test with external moab, load file in DAGMC*/
   // make new moab core
   std::shared_ptr<Interface> mbi = std::make_shared<Core>();
@@ -37,20 +35,21 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc) {
 
   // load a file
   rval = dagmc->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_via_moab) {
   /* 2 - Test with external moab, load file in MOAB*/
   // load the file into moab rather than dagmc
+  moab::ErrorCode mbcode;
   ErrorCode rval;
 
   std::shared_ptr<Interface> mbi = std::make_shared<Core>();
-  rval = mbi->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  mbcode = mbi->load_file(input_file);
+  EXPECT_EQ(mbcode, moab::MB_SUCCESS);
   std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>(mbi);
   rval = dagmc->load_existing_contents();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_internal) {
@@ -61,7 +60,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_internal) {
   std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>();
   // load a file
   rval = dagmc->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_build_obb) {
@@ -75,24 +74,25 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_build_obb) {
 
   // load a file
   rval = dagmc->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_via_moab_build_obb) {
   /* 2 - Test with external moab, load file in MOAB*/
   // load the file into moab rather than dagmc
+  moab::ErrorCode mbcode;
   ErrorCode rval;
 
   std::shared_ptr<Interface> mbi = std::make_shared<Core>();
-  rval = mbi->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  mbcode = mbi->load_file(input_file);
+  EXPECT_EQ(mbcode, moab::MB_SUCCESS);
   std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>(mbi);
   rval = dagmc->load_existing_contents();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_internal_build_obb) {
@@ -103,9 +103,9 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_internal_build_obb) {
   std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>();
   // load a file
   rval = dagmc->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval) {
@@ -117,18 +117,18 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval) {
   ErrorCode rval;
   // load a file
   rval = dagmc->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 
   // write the file
   rval = dagmc->write_mesh("fcad", 4);
 
   dagmc.reset(new DagMC());
   rval = dagmc->load_file("fcad");
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 
   // delete the fcad file
   remove("fcad");
@@ -136,7 +136,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval) {
 
 TEST_F(DagmcSimpleTest, dagmc_build_obb) {
   ErrorCode rval = DAG->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcSimpleTest, dagmc_num_vols) {
@@ -152,7 +152,7 @@ TEST_F(DagmcSimpleTest, dagmc_point_in) {
   double xyz[3] = {0.0, 0.0, 0.0};
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   ErrorCode rval = DAG->point_in_volume(vol_h, xyz, result);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   EXPECT_EQ(expect_result, result);
 }
 
@@ -165,9 +165,9 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval_rayfire) {
   ErrorCode rval;
   // load a file
   rval = dagmc->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 
   // write the file
   rval = dagmc->write_mesh("fcad", 4);
@@ -175,9 +175,9 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval_rayfire) {
   // now create new DAGMC
   dagmc.reset(new DagMC());
   rval = dagmc->load_file("fcad");
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 
   // delete the fcad file
   remove("fcad");
@@ -195,7 +195,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval_rayfire) {
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
 
   rval = DAG->ray_fire(vol_h, xyz, dir, next_surf, next_surf_dist);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   EXPECT_NEAR(expect_next_surf_dist, next_surf_dist, eps);
 }
 
@@ -213,7 +213,7 @@ TEST_F(DagmcSimpleTest, dagmc_rayfire) {
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
 
   ErrorCode rval = DAG->ray_fire(vol_h, xyz, dir, next_surf, next_surf_dist);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   EXPECT_NEAR(expect_next_surf_dist, next_surf_dist, eps);
 }
 
@@ -229,7 +229,7 @@ TEST_F(DagmcSimpleTest, dagmc_closest_to) {
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
 
   ErrorCode rval = DAG->closest_to_location(vol_h, xyz, distance);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   // distance should be 1.0 cm
   EXPECT_NEAR(expect_distance, distance, eps);
 }
@@ -246,7 +246,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_boundary) {
   int expect_result = 0;
 
   ErrorCode rval = DAG->test_volume_boundary(vol_h, surf_h, xyz, dir, result);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   // check ray leaving volume
   EXPECT_EQ(expect_result, result);
 }

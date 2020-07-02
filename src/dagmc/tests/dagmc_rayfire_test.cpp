@@ -7,11 +7,9 @@
 
 #include <iostream>
 
-using namespace moab;
+using namespace DAGMC;
 
-using moab::DagMC;
-
-std::shared_ptr<moab::DagMC> DAG;
+std::shared_ptr<DagMC> DAG;
 
 static const char input_file[] = "test_geom.h5m";
 double eps = 1.0e-6;
@@ -20,25 +18,25 @@ class DagmcRayFireTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     // Create new DAGMC instance
-    DAG = std::make_shared<moab::DagMC>();
+    DAG = std::make_shared<DagMC>();
     // Load mesh from file
     rloadval = DAG->load_file(input_file);
-    assert(rloadval == moab::MB_SUCCESS);
+    assert(rloadval == DAG_SUCCESS);
     // Create the OBB
     rval = DAG->init_OBBTree();
-    assert(rval == moab::MB_SUCCESS);
+    assert(rval == DAGMC::DAG_SUCCESS);
   }
   virtual void TearDown() {}
  protected:
-  moab::ErrorCode rloadval;
-  moab::ErrorCode rval;
+  ErrorCode rloadval;
+  ErrorCode rval;
 };
 
 TEST_F(DagmcRayFireTest, dagmc_setup_test) {
   ErrorCode rval = DAG->load_file(input_file);
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
   rval = DAG->init_OBBTree();
-  EXPECT_EQ(rval, MB_SUCCESS);
+  EXPECT_EQ(rval, DAG_SUCCESS);
 }
 
 TEST_F(DagmcRayFireTest, dagmc_origin_face_rayfire) {
@@ -67,7 +65,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_exit) {
-  DagMC::RayHistory history;
+  DAGMC::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction
@@ -81,7 +79,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_exit) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_entrance) {
-  DagMC::RayHistory history;
+  DAGMC::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction
@@ -95,7 +93,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_entrance) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_history_fail) {
-  DagMC::RayHistory history;
+  DAGMC::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction
@@ -122,7 +120,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_history_fail) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_history) {
-  DagMC::RayHistory history;
+  DAGMC::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction

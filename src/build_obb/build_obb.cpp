@@ -18,9 +18,9 @@ int main(int argc, char* argv[]) {
   po.parseCommandLine(argc, argv);
 
   // make new DagMC
-  moab::DagMC* DAG = new moab::DagMC();
+  DAGMC::DagMC* DAG = new DAGMC::DagMC();
 
-  moab::ErrorCode rval;
+  DAGMC::ErrorCode rval;
 
   // sets the output filename if none specified
   if (out_file == "") {
@@ -36,21 +36,21 @@ int main(int argc, char* argv[]) {
 
   // read geometry
   rval = DAG->load_file(dag_file.c_str());
-  if (moab::MB_SUCCESS != rval) {
+  if (DAGMC::DAG_SUCCESS != rval) {
     std::cerr << "DAGMC failed to read input file: " << dag_file << std::endl;
     exit(EXIT_FAILURE);
   }
 
   // initialize geometry
   rval = DAG->init_OBBTree();
-  if (moab::MB_SUCCESS != rval) {
+  if (DAGMC::DAG_SUCCESS != rval) {
     std::cerr << "DAGMC failed to initialize geometry and create OBB tree" <<  std::endl;
     exit(EXIT_FAILURE);
   }
 
   // write the new file
   rval = DAG->write_mesh(out_file.c_str(), out_file.length());
-  if (moab::MB_SUCCESS != rval) {
+  if (DAGMC::DAG_SUCCESS != rval) {
     std::cerr << "DAGMC failed write file with OBB" <<  std::endl;
     exit(EXIT_FAILURE);
   }

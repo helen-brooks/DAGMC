@@ -8,7 +8,7 @@
 #include <cassert>
 
 // dagmc instance
-std::shared_ptr<moab::DagMC> DAG;
+std::shared_ptr<DAGMC::DagMC> DAG;
 
 // metadata instance
 std::shared_ptr<dagmcMetaData> dgm;
@@ -24,30 +24,30 @@ class DagmcMetadataTest : public ::testing::Test {
     // Default h5m file for testing
     std::string infile = "test_dagmc.h5m";
 
-    DAG = std::make_shared<moab::DagMC>();
+    DAG = std::make_shared<DAGMC::DagMC>();
 
     rloadval = DAG->load_file(infile.c_str());
-    assert(rloadval == moab::MB_SUCCESS);
+    assert(rloadval == DAGMC::DAG_SUCCESS);
 
     // DAG call to initialize geometry
     rval = DAG->init_OBBTree();
-    assert(rval == moab::MB_SUCCESS);
+    assert(rval == DAGMC::DAG_SUCCESS);
   }
 
   virtual void TearDown() {}
 
  protected:
 
-  moab::ErrorCode rloadval;
-  moab::ErrorCode rval;
+  DAGMC::ErrorCode rloadval;
+  DAGMC::ErrorCode rval;
 };
 
 //---------------------------------------------------------------------------//
 // Test setup outcomes
 TEST_F(DagmcMetadataTest, SetUp) {
-  EXPECT_EQ(moab::MB_SUCCESS, rloadval);
+  EXPECT_EQ(DAGMC::DAG_SUCCESS, rloadval);
   // DAG call to initialize geometry
-  EXPECT_EQ(moab::MB_SUCCESS, rval);
+  EXPECT_EQ(DAGMC::DAG_SUCCESS, rval);
 }
 
 //---------------------------------------------------------------------------//
@@ -66,7 +66,7 @@ TEST_F(DagmcMetadataTest, TestMatAssigns) {
 
   int num_vols = DAG->num_entities(3);
   for (int i = 1 ; i <= num_vols ; i++) {
-    moab::EntityHandle eh = DAG->entity_by_index(3, i);
+    DAGMC::EntityHandle eh = DAG->entity_by_index(3, i);
     std::string mat_prop = dgm->get_volume_property("material", eh);
 
     if (!DAG->is_implicit_complement(eh))
@@ -99,7 +99,7 @@ TEST_F(DagmcMetadataTest, TestDensityAssigns) {
 
   int num_vols = DAG->num_entities(3);
   for (int i = 1 ; i <= num_vols ; i++) {
-    moab::EntityHandle eh = DAG->entity_by_index(3, i);
+    DAGMC::EntityHandle eh = DAG->entity_by_index(3, i);
     std::string mat_prop = dgm->get_volume_property("density", eh);
     EXPECT_EQ(mat_prop, base_property);
 
@@ -126,7 +126,7 @@ TEST_F(DagmcMetadataTest, TestMatDensityAssigns) {
 
   int num_vols = DAG->num_entities(3);
   for (int i = 1 ; i <= num_vols ; i++) {
-    moab::EntityHandle eh = DAG->entity_by_index(3, i);
+    DAGMC::EntityHandle eh = DAG->entity_by_index(3, i);
     std::string mat_prop = dgm->get_volume_property("material_density", eh);
 
     if (!DAG->is_implicit_complement(eh))
@@ -181,7 +181,7 @@ TEST_F(DagmcMetadataTest, TestImportanceAssigns) {
 
   int num_vols = DAG->num_entities(3);
   for (int i = 1 ; i <= num_vols ; i++) {
-    moab::EntityHandle eh = DAG->entity_by_index(3, i);
+    DAGMC::EntityHandle eh = DAG->entity_by_index(3, i);
 
     std::string  mat_prop = dgm->get_volume_property("importance", i, true);
     std::vector<std::string> imps = dgm->unpack_string(mat_prop, "|");
@@ -210,7 +210,7 @@ TEST_F(DagmcMetadataTest, TestBoundaryAssigns) {
   std::vector<int> surf_ids = {1, 2, 3, 5, 6, 7, 8, 9, 11, 13, 14, 15, 16};
   for (int id : surf_ids) {
     std::string bound_prop = dgm->get_surface_property("boundary", id, false);
-    moab::EntityHandle eh = DAG->entity_by_id(2, id);
+    DAGMC::EntityHandle eh = DAG->entity_by_id(2, id);
     std::string bound_prop2 = dgm->get_surface_property("boundary", eh);
 
     EXPECT_EQ(bound_prop, base_property);
@@ -249,7 +249,7 @@ TEST_F(DagmcMetadataTest, TestTallyAssigns) {
     int id = vol_ids[i];
     std::string vol_prop = dgm->get_volume_property("tally", id, false);
     std::vector<std::string> tally_props = dgm->unpack_string(vol_prop);
-    moab::EntityHandle eh = DAG->entity_by_id(3, id);
+    DAGMC::EntityHandle eh = DAG->entity_by_id(3, id);
     std::string vol_prop2 = dgm->get_surface_property("tally", eh);
     std::vector<std::string> tally_props2 = dgm->unpack_string(vol_prop2);
 
@@ -344,30 +344,30 @@ class DagmcMetadataTestImplCompMat : public ::testing::Test {
     // Default h5m file for testing
     std::string infile = "test_dagmc_impl.h5m";
 
-    DAG = std::make_shared<moab::DagMC>();
+    DAG = std::make_shared<DAGMC::DagMC>();
 
     rloadval = DAG->load_file(infile.c_str());
-    assert(rloadval == moab::MB_SUCCESS);
+    assert(rloadval == DAGMC::DAG_SUCCESS);
 
     // DAG call to initialize geometry
     rval = DAG->init_OBBTree();
-    assert(rval == moab::MB_SUCCESS);
+    assert(rval == DAGMC::DAG_SUCCESS);
   }
 
   virtual void TearDown() {}
 
  protected:
 
-  moab::ErrorCode rloadval;
-  moab::ErrorCode rval;
+  DAGMC::ErrorCode rloadval;
+  DAGMC::ErrorCode rval;
 };
 
 //---------------------------------------------------------------------------//
 // Test setup outcomes
 TEST_F(DagmcMetadataTestImplCompMat, SetUp) {
-  EXPECT_EQ(moab::MB_SUCCESS, rloadval);
+  EXPECT_EQ(DAGMC::DAG_SUCCESS, rloadval);
   // DAG call to initialize geometry
-  EXPECT_EQ(moab::MB_SUCCESS, rval);
+  EXPECT_EQ(DAGMC::DAG_SUCCESS, rval);
 }
 
 // make sure the the implicit complement material
