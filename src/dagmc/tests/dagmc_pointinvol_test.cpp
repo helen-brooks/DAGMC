@@ -8,7 +8,7 @@
 
 using namespace DAGMC;
 
-std::shared_ptr<DagMC> DAG;
+std::shared_ptr<DagMCBase> DAG;
 
 static const char input_file[] = "test_geom.h5m";
 
@@ -16,7 +16,7 @@ class DagmcPointInVolTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     // Create new DAGMC instance
-    DAG = std::make_shared<DagMC>();
+    DAG = std::make_shared<DagMCmoab>();
     // Load mesh from file
     rloadval = DAG->load_file(input_file);
     assert(rloadval == DAG_SUCCESS);

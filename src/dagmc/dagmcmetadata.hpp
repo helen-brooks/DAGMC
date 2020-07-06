@@ -7,7 +7,7 @@
 class dagmcMetaData {
  public:
   // Constructor
-  dagmcMetaData(DAGMC::DagMC* DAGptr,
+  dagmcMetaData(DAGMC::DagMCBase* DAGptr,
                 bool verbosity = false,
                 bool require_density_present = true);
 
@@ -104,7 +104,7 @@ class dagmcMetaData {
 
   // private member variables
  private:
-  DAGMC::DagMC* DAG; // Pointer to DAGMC instance
+  DAGMC::DagMCBase* DAG; // Pointer to DAGMC instance
   bool verbose; // Provide additional output while setting up and parsing properties
   bool require_density; // Require that all volumes have a specified density value
   std::vector<std::string> metadata_keywords; // Keywords supported by the metadata manager
@@ -115,6 +115,7 @@ class dagmcMetaData {
   const std::string reflecting_str{"Reflecting"};
   const std::string white_str{"White"};
   const std::string periodic_str{"Periodic"};
+
 
 };
 

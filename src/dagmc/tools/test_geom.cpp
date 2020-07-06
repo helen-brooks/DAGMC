@@ -28,23 +28,23 @@ using namespace moab;
 // (center of face at origin).
 ErrorCode write_geometry(const char* output_file_name);
 
-ErrorCode test_ray_fire(DAGMC::DagMC*);
+ErrorCode test_ray_fire(DAGMC::DagMCmoab*);
 
-ErrorCode test_point_in_volume(DAGMC::DagMC*);
+ErrorCode test_point_in_volume(DAGMC::DagMCmoab*);
 
-ErrorCode test_measure_volume(DAGMC::DagMC*);
+ErrorCode test_measure_volume(DAGMC::DagMCmoab*);
 
-ErrorCode test_measure_area(DAGMC::DagMC*);
+ErrorCode test_measure_area(DAGMC::DagMCmoab*);
 
-ErrorCode test_surface_sense(DAGMC::DagMC*);
+ErrorCode test_surface_sense(DAGMC::DagMCmoab*);
 
 ErrorCode overlap_write_geometry(const char* output_file_name);
-ErrorCode overlap_test_ray_fire(DAGMC::DagMC*);
-ErrorCode overlap_test_point_in_volume(DAGMC::DagMC*);
-ErrorCode overlap_test_measure_volume(DAGMC::DagMC*);
-ErrorCode overlap_test_measure_area(DAGMC::DagMC*);
-ErrorCode overlap_test_surface_sense(DAGMC::DagMC*);
-ErrorCode overlap_test_tracking(DAGMC::DagMC*);
+ErrorCode overlap_test_ray_fire(DAGMC::DagMCmoab*);
+ErrorCode overlap_test_point_in_volume(DAGMC::DagMCmoab*);
+ErrorCode overlap_test_measure_volume(DAGMC::DagMCmoab*);
+ErrorCode overlap_test_measure_area(DAGMC::DagMCmoab*);
+ErrorCode overlap_test_surface_sense(DAGMC::DagMCmoab*);
+ErrorCode overlap_test_tracking(DAGMC::DagMCmoab*);
 
 ErrorCode write_geometry(const char* output_file_name) {
   ErrorCode mbcode;
@@ -319,7 +319,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  DAGMC::DagMC* dagmc = new DAGMC::DagMC();
+  DAGMC::DagMCmoab* dagmc = new DAGMC::DagMCmoab();
 
   int errors = 0;
   mbcode = ErrorCode(dagmc->load_file(filename));
@@ -363,7 +363,7 @@ int main(int argc, char* argv[]) {
 
   delete dagmc;
 
-  dagmc = new DAGMC::DagMC();
+  dagmc = new DAGMC::DagMCmoab();
   //  mbcode = dagmc->moab_instance()->load_file( filename );
   mbcode = ErrorCode(dagmc->load_file(filename));
   remove(filename);
@@ -397,7 +397,7 @@ int main(int argc, char* argv[]) {
   return errors;
 }
 
-ErrorCode test_surface_sense(DAGMC::DagMC* dagmc) {
+ErrorCode test_surface_sense(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
   Interface* moab = dagmc->moab_instance();
 
@@ -431,7 +431,7 @@ ErrorCode test_surface_sense(DAGMC::DagMC* dagmc) {
   return MB_SUCCESS;
 }
 
-ErrorCode overlap_test_surface_sense(DAGMC::DagMC* dagmc) {
+ErrorCode overlap_test_surface_sense(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
   Interface* moab = dagmc->moab_instance();
 
@@ -468,7 +468,7 @@ ErrorCode overlap_test_surface_sense(DAGMC::DagMC* dagmc) {
 
   return MB_SUCCESS;
 }
-ErrorCode test_measure_volume(DAGMC::DagMC* dagmc) {
+ErrorCode test_measure_volume(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
   Interface* moab = dagmc->moab_instance();
 
@@ -498,7 +498,7 @@ ErrorCode test_measure_volume(DAGMC::DagMC* dagmc) {
 
   return MB_SUCCESS;
 }
-ErrorCode overlap_test_measure_volume(DAGMC::DagMC* dagmc) {
+ErrorCode overlap_test_measure_volume(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
   Interface* moab = dagmc->moab_instance();
 
@@ -531,7 +531,7 @@ ErrorCode overlap_test_measure_volume(DAGMC::DagMC* dagmc) {
   return MB_SUCCESS;
 }
 
-ErrorCode test_measure_area(DAGMC::DagMC* dagmc) {
+ErrorCode test_measure_area(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
   Interface* moab = dagmc->moab_instance();
 
@@ -574,7 +574,7 @@ ErrorCode test_measure_area(DAGMC::DagMC* dagmc) {
   return MB_SUCCESS;
 }
 
-ErrorCode overlap_test_measure_area(DAGMC::DagMC* dagmc) {
+ErrorCode overlap_test_measure_area(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
   Interface* moab = dagmc->moab_instance();
 
@@ -629,7 +629,7 @@ struct ray_fire {
   double distance;
 };
 
-ErrorCode test_ray_fire(DAGMC::DagMC* dagmc) {
+ErrorCode test_ray_fire(DAGMC::DagMCmoab* dagmc) {
   // Glancing ray-triangle intersections are not valid exit intersections.
   // Piercing ray-triangle intersections are valid exit intersections.
   // "0" destination surface implies that it is ambiguous.
@@ -765,7 +765,7 @@ ErrorCode test_ray_fire(DAGMC::DagMC* dagmc) {
   return MB_SUCCESS;
 }
 
-ErrorCode overlap_test_ray_fire(DAGMC::DagMC* dagmc) {
+ErrorCode overlap_test_ray_fire(DAGMC::DagMCmoab* dagmc) {
   // Glancing ray-triangle intersections are not valid exit intersections.
   // Piercing ray-triangle intersections are valid exit intersections.
   // "0" destination surface implies that it is ambiguous.
@@ -887,7 +887,7 @@ ErrorCode overlap_test_ray_fire(DAGMC::DagMC* dagmc) {
 
 struct PointInVol { double coords[3]; int result; double dir[3]; };
 
-ErrorCode test_point_in_volume(DAGMC::DagMC* dagmc) {
+ErrorCode test_point_in_volume(DAGMC::DagMCmoab* dagmc) {
   const char* const NAME_ARR[] = { "Boundary", "Outside", "Inside" };
   const char* const* names = NAME_ARR + 1;
   const int INSIDE = 1, OUTSIDE = 0, BOUNDARY = -1;
@@ -966,7 +966,7 @@ ErrorCode test_point_in_volume(DAGMC::DagMC* dagmc) {
   return MB_SUCCESS;
 }
 
-ErrorCode overlap_test_point_in_volume(DAGMC::DagMC* dagmc) {
+ErrorCode overlap_test_point_in_volume(DAGMC::DagMCmoab* dagmc) {
   const char* const NAME_ARR[] = { "Boundary", "Outside", "Inside" };
   const char* const* names = NAME_ARR + 1;
   const int INSIDE = 1, OUTSIDE = 0, BOUNDARY = -1;
@@ -1051,7 +1051,7 @@ ErrorCode overlap_test_point_in_volume(DAGMC::DagMC* dagmc) {
   return MB_SUCCESS;
 }
 
-ErrorCode overlap_test_tracking(DAGMC::DagMC* dagmc) {
+ErrorCode overlap_test_tracking(DAGMC::DagMCmoab* dagmc) {
   /* Track a particle from left (-x) to right (+x) through an overlap.
                 ____________________
                 |                   |

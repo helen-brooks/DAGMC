@@ -8,7 +8,7 @@
 
 using namespace DAGMC;
 
-DagMC* DAG;
+DagMCBase* DAG;
 
 static const char input_file[] = "test_geom.h5m";
 
@@ -19,7 +19,7 @@ class DagmcSimpleTest : public ::testing::Test {
 };
 
 TEST_F(DagmcSimpleTest, DAG_load_file) {
-  DAG = new DagMC();
+  DAG = new DagMCmoab();
   ErrorCode rval = DAG->load_file(input_file); // open the Dag file
   EXPECT_EQ(rval, DAG_SUCCESS);
 }
@@ -29,7 +29,7 @@ TEST_F(DagmcSimpleTest, DAG_load_file_dagmc) {
   // make new moab core
   std::shared_ptr<Interface> mbi = std::make_shared<Core>();
   // make new dagmc into that moab
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>(mbi);
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);
 
   ErrorCode rval;
 
@@ -47,7 +47,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_via_moab) {
   std::shared_ptr<Interface> mbi = std::make_shared<Core>();
   mbcode = mbi->load_file(input_file);
   EXPECT_EQ(mbcode, moab::MB_SUCCESS);
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>(mbi);
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);
   rval = dagmc->load_existing_contents();
   EXPECT_EQ(rval, DAG_SUCCESS);
 }
@@ -57,7 +57,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_internal) {
   // make new dagmc into that moab
   ErrorCode rval;
 
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>();
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>();
   // load a file
   rval = dagmc->load_file(input_file);
   EXPECT_EQ(rval, DAG_SUCCESS);
@@ -70,7 +70,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_build_obb) {
 
   std::shared_ptr<Interface> mbi = std::make_shared<Core>();
   // make new dagmc into that moab
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>(mbi);
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);
 
   // load a file
   rval = dagmc->load_file(input_file);
@@ -88,7 +88,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_via_moab_build_obb) {
   std::shared_ptr<Interface> mbi = std::make_shared<Core>();
   mbcode = mbi->load_file(input_file);
   EXPECT_EQ(mbcode, moab::MB_SUCCESS);
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>(mbi);
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);
   rval = dagmc->load_existing_contents();
   EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
@@ -100,7 +100,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_internal_build_obb) {
   // make new dagmc into that moab
   ErrorCode rval;
 
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>();
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>();
   // load a file
   rval = dagmc->load_file(input_file);
   EXPECT_EQ(rval, DAG_SUCCESS);
@@ -112,7 +112,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval) {
   // make new dagmc
   std::cout << "test_obb_retreval" << std::endl;
 
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>();
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>();
 
   ErrorCode rval;
   // load a file
@@ -124,7 +124,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval) {
   // write the file
   rval = dagmc->write_mesh("fcad", 4);
 
-  dagmc.reset(new DagMC());
+  dagmc.reset(new DagMCmoab());
   rval = dagmc->load_file("fcad");
   EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();
@@ -160,7 +160,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval_rayfire) {
   // make new dagmc
   std::cout << "test_obb_retreval and ray_fire" << std::endl;
 
-  std::shared_ptr<DagMC> dagmc = std::make_shared<DagMC>();
+  std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>();
 
   ErrorCode rval;
   // load a file
@@ -173,7 +173,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval_rayfire) {
   rval = dagmc->write_mesh("fcad", 4);
 
   // now create new DAGMC
-  dagmc.reset(new DagMC());
+  dagmc.reset(new DagMCmoab());
   rval = dagmc->load_file("fcad");
   EXPECT_EQ(rval, DAG_SUCCESS);
   rval = dagmc->init_OBBTree();

@@ -34,7 +34,7 @@ using namespace moab;
 void get_time_mem(double& tot_time, double& user_time,
                   double& sys_time, double& tot_mem);
 
-void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DAGMC::DagMC& dagmc,
+void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DAGMC::DagMCmoab& dagmc,
                  OrientedBoxTreeTool::TrvStats* trv_stats, EntityHandle tree_root);
 
 static const double PI = acos(-1.0);
@@ -227,8 +227,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  std::cout << "DagMC Version: " << DAGMC::DagMC::version()
-            << ", svn revision: " << DAGMC::DagMC::interface_revision() << std::endl;
+  std::cout << "DagMC Version: " << DAGMC::DagMCmoab::version()
+            << ", svn revision: " << DAGMC::DagMCmoab::interface_revision() << std::endl;
 
   if (!filename) {
     usage("No filename specified", 0, argv[0]);
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
     trv_stats = new OrientedBoxTreeTool::TrvStats;
   }
 
-  DAGMC::DagMC dagmc{};
+  DAGMC::DagMCmoab dagmc{};
   dagcode = dagmc.load_file(filename);
   if (DAGMC::DAG_SUCCESS != dagcode) {
     std::cerr << "Failed to load file '" << filename << "'" << std::endl;
@@ -509,7 +509,7 @@ void moab_memory_estimates(Interface* mbi, unsigned long long& moab_data_bytes, 
 
 #define DICT_VAL(X) out << "'" #X "':" << X << "," << std::endl;
 #define DICT_VAL_STR(X) out << "'" #X  "':'" << X << "'," << std::endl;
-void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DAGMC::DagMC& dagmc,
+void dump_pyfile(char* filename, double timewith, double timewithout, double tmem, DAGMC::DagMCmoab& dagmc,
                  OrientedBoxTreeTool::TrvStats* trv_stats, EntityHandle tree_root) {
   std::ofstream out(pyfile);
   out.precision(14);

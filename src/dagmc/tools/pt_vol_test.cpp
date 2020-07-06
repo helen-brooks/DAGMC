@@ -13,7 +13,7 @@
 
 using namespace DAGMC;
 
-ErrorCode test_pt_volume(DagMC& dagmc, int volID, double xxx, double yyy, double zzz, int& inside,
+ErrorCode test_pt_volume(DagMCBase& dagmc, int volID, double xxx, double yyy, double zzz, int& inside,
                          double uuu, double vvv, double www) {
   ErrorCode rval;
 
@@ -28,7 +28,7 @@ ErrorCode test_pt_volume(DagMC& dagmc, int volID, double xxx, double yyy, double
 
 }
 
-ErrorCode test_pt_volume_slow(DagMC& dagmc, int volID, double xxx, double yyy, double zzz, int& inside) {
+ErrorCode test_pt_volume_slow(DagMCBase& dagmc, int volID, double xxx, double yyy, double zzz, int& inside) {
   ErrorCode rval;
 
   EntityHandle vol = dagmc.entity_by_id(3, volID);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
             << " of geometry " << filename << std::endl;
 
 
-  DagMC dagmc{};
+  DagMCmoab dagmc{};
   rval = dagmc.load_file(filename);
   if (DAG_SUCCESS != rval) {
     std::cerr << "Failed to load file." << std::endl;

@@ -11,7 +11,7 @@ uwuw_preprocessor::uwuw_preprocessor(std::string material_library_filename, std:
 
   // make new DAGMC instance
   // TODO - use unique pointer instead of new?
-  DAG = new DAGMC::DagMC();
+  DAG = new DAGMC::DagMCmoab();
 
   // load the materials
   material_library = mat_lib.load_pyne_materials(material_library_filename, matlib_hdf5_path);

@@ -44,16 +44,16 @@ class MoabErrHandler : public ErrorHandler {
   };
 };
 
-class DagMC : public DagMCBase {
+class DagMCmoab : public DagMCBase {
 
 public:
   // Constructor
-  DagMC(std::shared_ptr<Interface> mb_impl = nullptr, double overlap_tolerance = 0., double numerical_precision = .001);
+  DagMCmoab(std::shared_ptr<Interface> mb_impl = nullptr, double overlap_tolerance = 0., double numerical_precision = .001);
   // Deprecated Constructor
   [[ deprecated("Replaced by DagMC(std::shared_ptr<Interface> mb_impl, ... )") ]]
-  DagMC(Interface* mb_impl, double overlap_tolerance = 0., double numerical_precision = .001);
+  DagMCmoab(Interface* mb_impl, double overlap_tolerance = 0., double numerical_precision = .001);
   // Destructor
-  ~DagMC();
+  ~DagMCmoab();
 
   /** Return the version of this library */
   static float version(std::string* version_string = NULL);
@@ -363,35 +363,35 @@ public:
   std::vector<EntityHandle> surList, facList;
 }; // End DagMC class definition
 
-inline EntityHandle DagMC::entity_by_index(int dimension, int index) {
+inline EntityHandle DagMCmoab::entity_by_index(int dimension, int index) {
   assert(2 <= dimension && 3 >= dimension && (unsigned)index < entHandles[dimension].size());
   return entHandles[dimension][index];
 }
 
-inline int DagMC::index_by_handle(EntityHandle handle) {
+inline int DagMCmoab::index_by_handle(EntityHandle handle) {
   assert(handle - setOffset < entIndices.size());
   return entIndices[handle - setOffset];
 }
 
-inline unsigned int DagMC::num_entities(int dimension) {
+inline unsigned int DagMCmoab::num_entities(int dimension) {
   assert(vertex_handle_idx <= dimension && groups_handle_idx >= dimension);
   return entHandles[dimension].size() - 1;
 }
 
-inline ErrorCode DagMC::getobb(EntityHandle volume, double minPt[3], double maxPt[3]) {
+inline ErrorCode DagMCmoab::getobb(EntityHandle volume, double minPt[3], double maxPt[3]) {
   errHandler->checkSetErr(GTT->get_bounding_coords(volume, minPt, maxPt),
                           "Failed to get obb for volume");
   return DAG_SUCCESS;
 }
 
-inline ErrorCode DagMC::getobb(EntityHandle volume, double center[3],
-                               double axis1[3], double axis2[3], double axis3[3]) {
+inline ErrorCode DagMCmoab::getobb(EntityHandle volume, double center[3],
+                                   double axis1[3], double axis2[3], double axis3[3]) {
   errHandler->checkSetErr(GTT->get_obb(volume, center, axis1, axis2, axis3),
                           "Failed to get obb for volume");
   return DAG_SUCCESS;
 }
 
-inline ErrorCode DagMC::get_root(EntityHandle vol_or_surf, EntityHandle& root) {
+inline ErrorCode DagMCmoab::get_root(EntityHandle vol_or_surf, EntityHandle& root) {
   errHandler->checkSetErr(GTT->get_root(vol_or_surf, root),
                           "Failed to get obb root set of volume or surface");
   return DAG_SUCCESS;

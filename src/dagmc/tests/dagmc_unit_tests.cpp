@@ -8,7 +8,7 @@
 #include <cassert>
 
 // dagmc instance
-std::shared_ptr<DAGMC::DagMC> DAG;
+std::shared_ptr<DAGMC::DagMCBase> DAG;
 
 // metadata instance
 std::shared_ptr<dagmcMetaData> dgm;
@@ -24,7 +24,7 @@ class DagmcMetadataTest : public ::testing::Test {
     // Default h5m file for testing
     std::string infile = "test_dagmc.h5m";
 
-    DAG = std::make_shared<DAGMC::DagMC>();
+    DAG = std::make_shared<DAGMC::DagMCmoab>();
 
     rloadval = DAG->load_file(infile.c_str());
     assert(rloadval == DAGMC::DAG_SUCCESS);
@@ -344,7 +344,7 @@ class DagmcMetadataTestImplCompMat : public ::testing::Test {
     // Default h5m file for testing
     std::string infile = "test_dagmc_impl.h5m";
 
-    DAG = std::make_shared<DAGMC::DagMC>();
+    DAG = std::make_shared<DAGMC::DagMCmoab>();
 
     rloadval = DAG->load_file(infile.c_str());
     assert(rloadval == DAGMC::DAG_SUCCESS);

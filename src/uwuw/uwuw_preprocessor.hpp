@@ -226,7 +226,7 @@ class uwuw_preprocessor {
   pyne::MaterialLibrary material_library; ///< material_library input by reading from library file
   pyne::MaterialLibrary uwuw_material_library; ///< material library to write out to DAGMC file
   name_concatenator* ncr; ///< unique naming class pointer
-  DAGMC::DagMC* DAG; ///< DAGMC pointer
+  DAGMC::DagMCBase* DAG; ///< DAGMC pointer
   dagmcMetaData* dmd; ///< DAGMC metadata pointer
   UWUW mat_lib; ///< static UWUW class for reading the material library
 

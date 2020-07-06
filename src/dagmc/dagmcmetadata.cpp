@@ -4,12 +4,13 @@
 #include <algorithm>
 
 // constructor for metadata class
-dagmcMetaData::dagmcMetaData(DAGMC::DagMC* dag_ptr,
+dagmcMetaData::dagmcMetaData(DAGMC::DagMCBase* dag_ptr,
                              bool verbosity,
                              bool require_density_present)
   : DAG(dag_ptr),
     verbose(verbosity),
     require_density(require_density_present) {
+
   // these are the keywords that dagmc will understand
   // from groups if you need to process more
   // they should be added here

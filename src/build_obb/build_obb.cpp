@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
   po.parseCommandLine(argc, argv);
 
   // make new DagMC
-  DAGMC::DagMC* DAG = new DAGMC::DagMC();
+  DAGMC::DagMCBase* DAG = new DAGMC::DagMCmoab();
 
   DAGMC::ErrorCode rval;
 

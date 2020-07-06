@@ -34,13 +34,12 @@ namespace DAGMC {
 
 const bool counting = false; /* controls counts of ray casts and pt_in_vols */
 
-// DagMC Constructor
-DagMC::DagMC(std::shared_ptr<Interface> mb_impl, double overlap_tolerance, double p_numerical_precision) {
+DagMCmoab::DagMCmoab(std::shared_ptr<Interface> mb_impl, double overlap_tolerance, double p_numerical_precision) {
 
 #ifdef DOUBLE_DOWN
   std::cout << "Using the DOUBLE-DOWN interface to Embree." << std::endl;
 #endif
-  
+														  
   moab_instance_created = false;
 
   // Create error handler
@@ -68,7 +67,7 @@ DagMC::DagMC(std::shared_ptr<Interface> mb_impl, double overlap_tolerance, doubl
 
 }
 
-DagMC::DagMC(Interface* mb_impl, double overlap_tolerance, double p_numerical_precision) {
+DagMCmoab::DagMCmoab(Interface* mb_impl, double overlap_tolerance, double p_numerical_precision) {
   moab_instance_created = false;
 
   // Create error handler
@@ -91,7 +90,7 @@ DagMC::DagMC(Interface* mb_impl, double overlap_tolerance, double p_numerical_pr
 }
 
 // Destructor
-DagMC::~DagMC() {
+DagMCmoab::~DagMCmoab() {
   // if we created the moab instance
   // clear it
   if (moab_instance_created) {
@@ -111,7 +110,7 @@ float DagMC::version(std::string* version_string) {
 // *****************************************************************************
 
 // the standard DAGMC load file method
-ErrorCode DagMC::load_file(const char* cfile) {
+ErrorCode DagMCmoab::load_file(const char* cfile) {
   ErrorCode rval;
   std::string filename(cfile);
   std::cout << "Loading file " << cfile << std::endl;
@@ -151,7 +150,7 @@ ErrorCode DagMC::load_file(const char* cfile) {
 }
 
 // setup the implicit compliment
-ErrorCode DagMC::setup_impl_compl() {
+ErrorCode DagMCmoab::setup_impl_compl() {
   // If it doesn't already exist, create implicit complement
   // Create data structures for implicit complement
   ErrorCode rval = ErrorCode(GTT->setup_implicit_complement());
@@ -164,7 +163,7 @@ ErrorCode DagMC::setup_impl_compl() {
 
 // gets the entity sets tagged with geomtag 2 and 3
 // surfaces and volumes respectively
-ErrorCode DagMC::setup_geometry(Range& surfs, Range& vols) {
+ErrorCode DagMCmoab::setup_geometry(Range& surfs, Range& vols) {
 
   // get all surfaces
   errHandler->checkSetErr(GTT->get_gsets_by_dimension(2, surfs),
@@ -178,7 +177,7 @@ ErrorCode DagMC::setup_geometry(Range& surfs, Range& vols) {
 }
 
 // sets up the obb tree for the problem
-ErrorCode DagMC::setup_obbs() {
+ErrorCode DagMCmoab::setup_obbs() {
   // If we havent got an OBB Tree, build one.
   if (!GTT->have_obb_tree()) {
     std::cout << "Building acceleration data structures..." << std::endl;
@@ -195,7 +194,7 @@ ErrorCode DagMC::setup_obbs() {
 }
 
 // helper function to finish setting up required tags.
-ErrorCode DagMC::finish_loading() {
+ErrorCode DagMCmoab::finish_loading() {
   ErrorCode rval;
 
   nameTag = get_tag(NAME_TAG_NAME, NAME_TAG_SIZE,
@@ -251,7 +250,7 @@ ErrorCode DagMC::finish_loading() {
 // SECTION II: Fundamental Geometry Operations/Queries
 // *****************************************************************************
 
-ErrorCode DagMC::ray_fire(const EntityHandle volume, const double point[3],
+ErrorCode DagMCmoab::ray_fire(const EntityHandle volume, const double point[3],
                           const double dir[3], EntityHandle& next_surf,
                           double& next_surf_dist,
                           RayHistory* history,
@@ -262,13 +261,13 @@ ErrorCode DagMC::ray_fire(const EntityHandle volume, const double point[3],
 				    stats));
 }
 
-ErrorCode DagMC::point_in_volume(const EntityHandle volume, const double xyz[3],
+ErrorCode DagMCmoab::point_in_volume(const EntityHandle volume, const double xyz[3],
                                  int& result, const double* uvw,
                                  const RayHistory* history) {
   return ErrorCode(ray_tracer->point_in_volume(volume, xyz, result, uvw, history));
 }
 
-ErrorCode DagMC::test_volume_boundary(const EntityHandle volume,
+ErrorCode DagMCmoab::test_volume_boundary(const EntityHandle volume,
                                       const EntityHandle surface,
                                       const double xyz[3], const double uvw[3],
                                       int& result,
@@ -278,49 +277,50 @@ ErrorCode DagMC::test_volume_boundary(const EntityHandle volume,
 }
 
 // use spherical area test to determine inside/outside of a polyhedron.
-ErrorCode DagMC::point_in_volume_slow(EntityHandle volume, const double xyz[3],
+ErrorCode DagMCmoab::point_in_volume_slow(EntityHandle volume, const double xyz[3],
                                       int& result) {
   return ErrorCode(ray_tracer->point_in_volume_slow(volume, xyz, result));
 }
 
 // detemine distance to nearest surface
-ErrorCode DagMC::closest_to_location(EntityHandle volume,
+ErrorCode DagMCmoab::closest_to_location(EntityHandle volume,
                                      const double coords[3], double& result,
                                      EntityHandle* surface) {
   return ErrorCode(ray_tracer->closest_to_location(volume, coords, result, surface));
 }
 
 // calculate volume of polyhedron
-ErrorCode DagMC::measure_volume(EntityHandle volume, double& result) {
+ErrorCode DagMCmoab::measure_volume(EntityHandle volume, double& result) {
   return ErrorCode(ray_tracer->measure_volume(volume, result));
 }
 
 // sum area of elements in surface
-ErrorCode DagMC::measure_area(EntityHandle surface, double& result) {
+ErrorCode DagMCmoab::measure_area(EntityHandle surface, double& result) {
   return ErrorCode(ray_tracer->measure_area(surface, result));
+
 }
 
 // get sense of surface(s) wrt volume
-ErrorCode DagMC::surface_sense(EntityHandle volume, int num_surfaces,
-                               const EntityHandle* surfaces, int* senses_out) {
+ErrorCode DagMCmoab::surface_sense(EntityHandle volume, int num_surfaces,
+                                   const EntityHandle* surfaces, int* senses_out) {
   return ErrorCode(GTT->get_surface_senses(volume, num_surfaces, surfaces,
                                            senses_out));
 }
 
 // get sense of surface(s) wrt volume
-ErrorCode DagMC::surface_sense(EntityHandle volume, EntityHandle surface,
-                               int& sense_out) {
+ErrorCode DagMCmoab::surface_sense(EntityHandle volume, EntityHandle surface,
+                                   int& sense_out) {
   return ErrorCode(GTT->get_sense(surface, volume, sense_out));
 }
 
-ErrorCode DagMC::get_angle(EntityHandle surf, const double in_pt[3],
+ErrorCode DagMCmoab::get_angle(EntityHandle surf, const double in_pt[3],
                            double angle[3],
                            const RayHistory* history) {
   return ErrorCode(ray_tracer->get_normal(surf, in_pt, angle, history));
 }
 
-ErrorCode DagMC::next_vol(EntityHandle surface, EntityHandle old_volume,
-                          EntityHandle& new_volume) {
+ErrorCode DagMCmoab::next_vol(EntityHandle surface, EntityHandle old_volume,
+                              EntityHandle& new_volume) {
   return ErrorCode(GTT->next_vol(surface, old_volume, new_volume));
 }
 
@@ -328,11 +328,11 @@ ErrorCode DagMC::next_vol(EntityHandle surface, EntityHandle old_volume,
 // SECTION III
 // *****************************************************************************
 
-EntityHandle DagMC::entity_by_id(int dimension, int id) {
+EntityHandle DagMCmoab::entity_by_id(int dimension, int id) {
   return GTT->entity_by_id(dimension, id);
 }
 
-int DagMC::id_by_index(int dimension, int index) {
+int DagMCmoab::id_by_index(int dimension, int index) {
   EntityHandle h = entity_by_index(dimension, index);
   if (!h)
     return 0;
@@ -342,11 +342,11 @@ int DagMC::id_by_index(int dimension, int index) {
   return result;
 }
 
-int DagMC::get_entity_id(EntityHandle this_ent) {
+int DagMCmoab::get_entity_id(EntityHandle this_ent) {
   return GTT->global_id(this_ent);
 }
 
-ErrorCode DagMC::build_indices(Range& surfs, Range& vols) {
+ErrorCode DagMCmoab::build_indices(Range& surfs, Range& vols) {
   ErrorCode rval = DAG_SUCCESS;
 
 
@@ -409,20 +409,21 @@ ErrorCode DagMC::build_indices(Range& surfs, Range& vols) {
 // SECTION IV
 // *****************************************************************************
 
-double DagMC::overlap_thickness() { return ray_tracer->get_overlap_thickness(); }
+double DagMCmoab::overlap_thickness() { return ray_tracer->get_overlap_thickness(); }
 
-double DagMC::numerical_precision() { return ray_tracer->get_numerical_precision(); }
+double DagMCmoab::numerical_precision() { return ray_tracer->get_numerical_precision(); }
 
-void DagMC::set_overlap_thickness(double new_thickness) {
+void DagMCmoab::set_overlap_thickness(double new_thickness) {
   ray_tracer->set_overlap_thickness(new_thickness);
 }
 
-void DagMC::set_numerical_precision(double new_precision) {
+void DagMCmoab::set_numerical_precision(double new_precision) {
   ray_tracer->set_numerical_precision(new_precision);
+
 }
 
-ErrorCode DagMC::write_mesh(const char* ffile,
-                            const int flen) {
+ErrorCode DagMCmoab::write_mesh(const char* ffile,
+                                const int flen) {
   ErrorCode rval;
 
   // write out a mesh file if requested
@@ -441,7 +442,7 @@ ErrorCode DagMC::write_mesh(const char* ffile,
 // SECTION V: Metadata handling
 // *****************************************************************************
 
-ErrorCode DagMC::get_group_name(EntityHandle group_set, std::string& name) {
+ErrorCode DagMCmoab::get_group_name(EntityHandle group_set, std::string& name) {
   ErrorCode rval;
   const void* v = NULL;
   int ignored;
@@ -452,8 +453,8 @@ ErrorCode DagMC::get_group_name(EntityHandle group_set, std::string& name) {
   return DAG_SUCCESS;
 }
 
-ErrorCode DagMC::append_packed_string(Tag tag, EntityHandle eh,
-                                      std::string& new_string) {
+ErrorCode DagMCmoab::append_packed_string(Tag tag, EntityHandle eh,
+                                          std::string& new_string) {
   // When properties have multiple values, the values are tagged in a single character array
   // with the different values separated by null characters
   ErrorCode rval;
@@ -485,8 +486,8 @@ ErrorCode DagMC::append_packed_string(Tag tag, EntityHandle eh,
   return rval;
 }
 
-ErrorCode DagMC::unpack_packed_string(Tag tag, EntityHandle eh,
-                                      std::vector< std::string >& values) {
+ErrorCode DagMCmoab::unpack_packed_string(Tag tag, EntityHandle eh,
+                                          std::vector< std::string >& values) {
   ErrorCode rval;
   const void* p;
   const char* str;
@@ -504,9 +505,9 @@ ErrorCode DagMC::unpack_packed_string(Tag tag, EntityHandle eh,
   return DAG_SUCCESS;
 }
 
-ErrorCode DagMC::parse_properties(const std::vector<std::string>& keywords,
-                                  const std::map<std::string, std::string>& keyword_synonyms,
-                                  const char* delimiters) {
+ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
+                                      const std::map<std::string, std::string>& keyword_synonyms,
+                                      const char* delimiters) {
   ErrorCode rval;
 
   // master keyword map, mapping user-set words in cubit to canonical property names
@@ -597,7 +598,7 @@ ErrorCode DagMC::parse_properties(const std::vector<std::string>& keywords,
   return DAG_SUCCESS;
 } */
 
-bool DagMC::has_prop(EntityHandle eh, const std::string& prop) {
+bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
   ErrorCode rval;
 
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
@@ -678,13 +679,13 @@ bool DagMC::has_prop(EntityHandle eh, const std::string& prop) {
   return DAG_SUCCESS;
 } */
 
-bool DagMC::is_implicit_complement(EntityHandle volume) {
+bool DagMCmoab::is_implicit_complement(EntityHandle volume) {
   return GTT->is_implicit_complement(volume);
 }
 
-Tag DagMC::get_tag(const char* name, int size, TagType store,
-                   DataType type, const void* def_value,
-                   bool create_if_missing) {
+Tag DagMCmoab::get_tag(const char* name, int size, TagType store,
+                       DataType type, const void* def_value,
+                       bool create_if_missing) {
   Tag retval = 0;
   unsigned flags = store | moab::MB_TAG_CREAT;
   // NOTE: this function seems to be broken in that create_if_missing has
