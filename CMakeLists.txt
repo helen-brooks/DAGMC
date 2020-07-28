@@ -37,6 +37,11 @@ if(BUILD_MCNP5 OR BUILD_MCNP6)
 endif()
 
 find_package(MOAB REQUIRED)
+if(BUILD_LIBMESH)
+  # Look for libMesh
+  find_package(libMesh REQUIRED)
+endif()
+
 find_package(OpenMP)
 
 dagmc_setup_flags()

@@ -2,7 +2,7 @@ macro (dagmc_setup_build)
   message("")
 
   # All DAGMC libraries
-  set(DAGMC_LIBRARY_LIST dagmc pyne_dagmc uwuw dagtally makeWatertight dagsolid fludag)
+  set(DAGMC_LIBRARY_LIST dagmc pyne_dagmc uwuw dagtally makeWatertight dagsolid fludag geom)
 
   # Keep track of which libraries are installed
   set(DAGMC_LIBRARIES MOAB CACHE INTERNAL "DAGMC_LIBRARIES")
@@ -41,6 +41,7 @@ endmacro ()
 macro (dagmc_setup_options)
   message("")
 
+  option(BUILD_LIBMESH     "Build with LibMesh"                      OFF)
   option(BUILD_MCNP5       "Build DAG-MCNP5"                         OFF)
   option(BUILD_MCNP6       "Build DAG-MCNP6"                         OFF)
   option(BUILD_MCNP_PLOT   "Build DAG-MCNP5/6 with plotting support" OFF)
@@ -228,7 +229,7 @@ macro (dagmc_install_library lib_name)
       target_link_libraries(${lib_name}-shared PUBLIC dd)
     endif()
     target_include_directories(${lib_name}-shared INTERFACE $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>
-                                                            ${MOAB_INCLUDE_DIRS})
+                                                            ${MESH_INCLUDE_DIRS})
     install(TARGETS ${lib_name}-shared
             EXPORT DAGMCTargets
             LIBRARY DESTINATION ${INSTALL_LIB_DIR}
@@ -245,7 +246,7 @@ macro (dagmc_install_library lib_name)
     endif ()
     target_link_libraries(${lib_name}-static ${LINK_LIBS_STATIC})
     target_include_directories(${lib_name}-static INTERFACE $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>
-                                                            ${MOAB_INCLUDE_DIRS})
+                                                            ${MESH_INCLUDE_DIRS})
 
     install(TARGETS ${lib_name}-static
             EXPORT DAGMCTargets

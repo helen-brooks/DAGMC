@@ -74,3 +74,4 @@ else ()
 endif ()
 
 include_directories(${MOAB_INCLUDE_DIRS})
+list(APPEND MESH_INCLUDE_DIRS ${MOAB_INCLUDE_DIRS})

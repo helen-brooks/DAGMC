@@ -48,3 +48,8 @@ endif ()
 if (BUILD_OVERLAP_CHECK)
   add_subdirectory(overlap_check)
 endif ()
+
+# Add currently self-isolated libmesh-dependent classes
+if(BUILD_LIBMESH)
+  add_subdirectory(geom)
+endif()
