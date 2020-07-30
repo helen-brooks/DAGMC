@@ -1,8 +1,12 @@
+set(DRIVERS geom_unit_test_driver.cc)
+
 set(LINK_LIBS geom)
 set(LINK_LIBS_EXTERN_NAMES)
 
+include_directories(${GTEST_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/src/geom)
 include_directories(${CMAKE_BINARY_DIR}/src/geom)
 
-set(SRC_FILES test.cpp)
-dagmc_install_exe(geom-test)
+dagmc_install_test(topotool_unit_test  cpp)
+
+dagmc_install_test_file(sphere-tetmesh.e)

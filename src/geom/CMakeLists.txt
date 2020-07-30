@@ -9,6 +9,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/geom)
 
 dagmc_install_library(geom)
 
+add_subdirectory(testapp)
 if (BUILD_TESTS)
   add_subdirectory(tests)
 endif ()

@@ -1,17 +1,15 @@
 // C++ include files that we need
 #include <iostream>
-// // Functions to initialize the library.
-// #include "libmesh/libmesh.h"
-// Basic include files needed for the mesh functionality.
+// Libmesh headers
 #include "libmesh/mesh.h"
-// For node_iterator
 #include "libmesh/mesh_base.h"
-// For node
 #include "libmesh/node.h"
-// For elem
 #include "libmesh/elem.h"
 
 namespace DAGMC {
+
+const int IMPLICIT_COMPLEMENT = -1;
+const int VOID_INDEX = -999;
 
 class GeomTopoTool {
 
@@ -22,6 +20,19 @@ class GeomTopoTool {
   virtual bool setupGeometry() = 0;
 
   virtual void print() = 0;
+
+  // Return number of entities
+  virtual unsigned int nVols() = 0;
+  virtual unsigned int nSurfs() = 0;
+
+  // Convert from index to ID
+  virtual int getVolID(unsigned int index) = 0;
+  virtual int getSurfID(unsigned int index) = 0;
+
+  // Return constant reference to surfaces and volumes
+  // associated with a given index
+  virtual const std::vector<int>& getSurfs(unsigned int index) = 0;
+  virtual const std::pair<int, int>& getVolPair(unsigned int index) = 0;
 
  private:
 
@@ -35,16 +46,30 @@ class GeomTopoToolLM : public GeomTopoTool {
 
 
   GeomTopoToolLM(std::shared_ptr<libMesh::Mesh> meshPtrIn) :
-    meshPtr(meshPtrIn), IMPLICIT_COMPLEMENT(-1) {
-    std::cout << "Passed a pointer to a mesh." << std::endl;
-  };
+    meshPtr(meshPtrIn) {};
 
   ~GeomTopoToolLM() {};
-
 
   bool setupGeometry() override;
 
   void print() override;
+
+  // Note: answer includes implicit complement
+  unsigned int nVols() override {
+    return vol_to_surfs.size();
+  };
+  unsigned int nSurfs() override {
+    return surf_to_vols.size();
+  };
+
+  // Convert from index to ID
+  int getVolID(unsigned int index) override;
+  int getSurfID(unsigned int index) override;
+
+  // Return constant reference to surfaces and volumes
+  // associated with a given index
+  const std::vector<int>& getSurfs(unsigned int index) override;
+  const std::pair<int, int>& getVolPair(unsigned int index) override;
 
  private:
 
@@ -54,7 +79,7 @@ class GeomTopoToolLM : public GeomTopoTool {
   // Booking for topological relationship heirarchy
   std::map<int, std::vector<int> > vol_to_surfs;
   std::map<int, std::pair<int, int> > surf_to_vols;
-  const int IMPLICIT_COMPLEMENT;
+  std::shared_ptr< std::vector<int> > dummy;
 
 };
 
