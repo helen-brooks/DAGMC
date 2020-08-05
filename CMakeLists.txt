@@ -40,6 +40,8 @@ find_package(MOAB REQUIRED)
 if(BUILD_LIBMESH)
   # Look for libMesh
   find_package(libMesh REQUIRED)
+  # Look for armadillo
+  find_package(armadillo REQUIRED)
 endif()
 
 find_package(OpenMP)

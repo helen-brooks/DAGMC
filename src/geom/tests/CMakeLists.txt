@@ -8,5 +8,6 @@ include_directories(${CMAKE_SOURCE_DIR}/src/geom)
 include_directories(${CMAKE_BINARY_DIR}/src/geom)
 
 dagmc_install_test(topotool_unit_test  cpp)
+dagmc_install_test(box_test  cpp)
 
 dagmc_install_test_file(sphere-tetmesh.e)
