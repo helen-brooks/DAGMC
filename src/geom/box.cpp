@@ -9,7 +9,7 @@ namespace DAGMC {
 Box::Box(Vector max,  Vector min,  Matrix M) :
   dim(max.n_rows), maxPoint(max), minPoint(min), basis(M) {
   // Sanity checks
-  status = getStatus(basis, minPoint, maxPoint);
+  status = getStatus(basis, minPoint, maxPoint, degenAxes);
   sane = (status == BoxStatus::success);
 }
 
@@ -19,7 +19,7 @@ Box::Box(Vector max,  Vector min) :
   // Set basis to identity matrix
   basis.eye(dim, dim);
   // Sanity checks
-  status = getStatus(basis, minPoint, maxPoint);
+  status = getStatus(basis, minPoint, maxPoint, degenAxes);
   sane = (status == BoxStatus::success);
 }
 
@@ -31,11 +31,12 @@ Box::Box(Vector max) :
   // Set basis to identity matrix
   basis.eye(dim, dim);
   // Sanity checks
-  status = getStatus(basis, minPoint, maxPoint);
+  status = getStatus(basis, minPoint, maxPoint, degenAxes);
   sane = (status == BoxStatus::success);
 }
 
-Box::BoxStatus Box::getStatus(Matrix& M, Vector& min, Vector& max) const {
+Box::BoxStatus Box::getStatus(Matrix& M, Vector& min, Vector& max,
+                              std::vector<unsigned int>& degen) const {
 
   // Check that all dimensions are consistent
   if (min.n_rows != dim || max.n_rows != dim || M.n_rows != dim
@@ -65,12 +66,16 @@ Box::BoxStatus Box::getStatus(Matrix& M, Vector& min, Vector& max) const {
 
     // Project out diff along this basis vec to get side
     double side = dot(diff, veci);
-    // Check if box would have a zero-length side
-    if (side == 0)
-      return BoxStatus::faildegenerate;
+
     // Check that points have correct ordering (max>min)
     if (side < 0)
       return BoxStatus::failordered;
+
+    // Check if box would have a zero-length side
+    // i.e. box is degnerate
+    if (side == 0) {
+      degen.push_back(icol);
+    }
 
   }
   // Our box passed all tests.

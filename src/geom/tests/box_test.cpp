@@ -16,6 +16,7 @@ TEST(BoxTest, UnitBox) {
   // Check construction succeeded
   ASSERT_EQ(unitbox.getBoxStatus(), 0);
   ASSERT_TRUE(unitbox.isSane());
+  EXPECT_EQ(unitbox.nDegenerate(), 0);
 
   // Check basis vectors components
   DAGMC::Vector v1 = unitbox.basisVec(0);
@@ -139,6 +140,7 @@ TEST(BoxTest, AlignedBox) {
   // Check construction succeeded
   ASSERT_EQ(box.getBoxStatus(), 0);
   ASSERT_TRUE(box.isSane());
+  EXPECT_EQ(box.nDegenerate(), 0);
 
   // Check basis vectors components
   DAGMC::Vector v1 = box.basisVec(0);
@@ -337,17 +339,6 @@ TEST(BoxTest, BrokenBoxOrder) {
 
 }
 
-TEST(BoxTest, BrokenBoxDegenerate) {
-
-  DAGMC::Vector max = {0., 1., 0.};
-  DAGMC::Vector min = {0, -1., 0.};
-  DAGMC::Box box(min, max);
-
-  EXPECT_EQ(box.getBoxStatus(), DAGMC::Box::faildegenerate);
-  EXPECT_FALSE(box.isSane());
-
-}
-
 //Tests for an oriented box
 TEST(BoxTest, OrientedBox) {
 
@@ -364,6 +355,7 @@ TEST(BoxTest, OrientedBox) {
   // Check construction succeeded
   ASSERT_EQ(box.getBoxStatus(), 0);
   ASSERT_TRUE(box.isSane());
+  EXPECT_EQ(box.nDegenerate(), 0);
 
   // Check some points
   DAGMC::Vector orig1 = { 0., 0., 0.};
@@ -395,5 +387,125 @@ TEST(BoxTest, OrientedBox) {
   EXPECT_TRUE(box.intersectsRay(orig4, dir1));
   EXPECT_TRUE(box.intersectsRay(orig5, dir1));
   EXPECT_FALSE(box.intersectsRay(orig6, dir1));
+
+}
+
+
+TEST(BoxTest, DegenerateBoxSquare) {
+
+  DAGMC::Vector max = {1., 1., 0.};
+  DAGMC::Vector min = {-1, -1., 0.};
+  DAGMC::Box box(max, min);
+
+  //Check construction succeeded
+  ASSERT_EQ(box.getBoxStatus(), DAGMC::Box::success);
+  ASSERT_TRUE(box.isSane());
+
+  // Check degeneracy
+  EXPECT_EQ(box.nDegenerate(), 1);
+  EXPECT_EQ(box.getDegenDir(0), 2);
+
+  // Check points
+  DAGMC::Vector inside  = {0., 0., 0.};
+  DAGMC::Vector outside = {0., 0., 1.};
+
+  EXPECT_TRUE(box.containsPoint(inside));
+  EXPECT_FALSE(box.containsPoint(outside));
+
+  // Check some rays
+  DAGMC::Vector orig = {0., 0., -1.};
+  DAGMC::Vector dir = { 0., 0., 1,};
+  EXPECT_TRUE(box.intersectsRay(orig, dir));
+
+  dir = {1., 1., 0.};
+  EXPECT_FALSE(box.intersectsRay(orig, dir));
+
+  orig = {-2., -2., 0.};
+  EXPECT_TRUE(box.intersectsRay(orig, dir));
+
+}
+
+TEST(BoxTest, DegenerateBoxLine) {
+
+  DAGMC::Vector max = {1., 0., 0.};
+  DAGMC::Vector min = {-1, 0., 0.};
+  DAGMC::Box box(max, min);
+
+  //Check construction succeeded
+  ASSERT_EQ(box.getBoxStatus(), DAGMC::Box::success);
+  ASSERT_TRUE(box.isSane());
+
+  // Check degeneracy
+  EXPECT_EQ(box.nDegenerate(), 2);
+  EXPECT_EQ(box.getDegenDir(0), 1);
+  EXPECT_EQ(box.getDegenDir(1), 2);
+
+  // Check points
+  DAGMC::Vector inside  = {0., 0., 0.};
+  DAGMC::Vector outside1 = {0., 0., 1.};
+  DAGMC::Vector outside2 = {0., 1., 0.};
+  DAGMC::Vector outside3 = {2., 0., 0.};
+  EXPECT_TRUE(box.containsPoint(inside));
+  EXPECT_FALSE(box.containsPoint(outside1));
+  EXPECT_FALSE(box.containsPoint(outside2));
+  EXPECT_FALSE(box.containsPoint(outside3));
+
+  // Check rays
+
+  // Intersect along line
+  DAGMC::Vector orig = {-2., 0., 0.};
+  DAGMC::Vector dir = { 1., 0., 0.};
+  EXPECT_TRUE(box.intersectsRay(orig, dir));
+
+  // Miss
+  dir = {0, 1., 0.};
+  EXPECT_FALSE(box.intersectsRay(orig, dir));
+  dir = {0, 0., 1.};
+  EXPECT_FALSE(box.intersectsRay(orig, dir));
+
+  // Intersect orthogonal
+  orig = {0., -1., 0.};
+  dir = {0, 1., 0.};
+  EXPECT_TRUE(box.intersectsRay(orig, dir));
+
+  // Intersect at angle
+  orig = {-1., -1., 0.};
+  dir = {1, 1., 0.};
+  EXPECT_TRUE(box.intersectsRay(orig, dir));
+}
+
+TEST(BoxTest, DegenerateBoxPoint) {
+
+  DAGMC::Vector point = {1., 1., 1.};
+  DAGMC::Box box(point, point);
+
+  //Check construction succeeded
+  ASSERT_EQ(box.getBoxStatus(), DAGMC::Box::success);
+  ASSERT_TRUE(box.isSane());
+
+  // Check degeneracy
+  EXPECT_EQ(box.nDegenerate(), 3);
+  EXPECT_EQ(box.getDegenDir(0), 0);
+  EXPECT_EQ(box.getDegenDir(1), 1);
+  EXPECT_EQ(box.getDegenDir(2), 2);
+
+
+  // Check the point is contained
+  EXPECT_TRUE(box.containsPoint(point));
+
+  // Literally any other point is outside
+  DAGMC::Vector outside = {0., 0., 0.};
+  EXPECT_FALSE(box.containsPoint(outside));
+
+  // Any ray passing through point should pass
+  DAGMC::Vector orig = outside;
+  DAGMC::Vector dir = { 1., 1., 1.};
+  EXPECT_TRUE(box.intersectsRay(orig, dir));
+
+  dir = { 1., 0., 0.};
+  EXPECT_FALSE(box.intersectsRay(orig, dir));
+
+  orig = {0., 1., 1.};
+  EXPECT_TRUE(box.intersectsRay(orig, dir));
 
 }

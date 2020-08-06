@@ -25,6 +25,19 @@ class Box {
   bool isSane() const { return  sane; }
   int getBoxStatus() const { return int(status); };
 
+  // Find out how many degerate sides there are
+  // 0 : box
+  // 1 : square
+  // 2 : line segment
+  // 3 : point
+  unsigned int nDegenerate() const {return degenAxes.size(); };
+
+  // Get the ith degenerate direction. Corresponds to
+  // col index in basis
+  unsigned int getDegenDir(unsigned int i) const {
+    return degenAxes.at(i);
+  }
+
   // Implements the ray - box intersection algorithm
   // from "An Introduction to Ray Tracing", contribution
   // "Essential Ray Tracing Algorithms" by Eric Haines,
@@ -41,6 +54,8 @@ class Box {
   // bool intersectsBox(const Box& box) const;
 
   // Query if box contains point
+  // Face, edges and corners (or endpoints for degenerate boxes)
+  // are inclusive
   // N.B. Will return false if box not sane
   bool containsPoint(Vector point) const;
 
@@ -52,13 +67,14 @@ class Box {
 
   // Define a status code for sanity checks
   enum BoxStatus { success, faildim, failnorm, failorth,
-                   faildegenerate, failordered
+                   failordered
                  };
 
  private:
 
   // On construction, perform some sanity checks
-  BoxStatus getStatus(Matrix& M, Vector& min, Vector& max) const;
+  BoxStatus getStatus(Matrix& M, Vector& min, Vector& max,
+                      std::vector<unsigned int>& degen) const;
 
   // Dimension of the box
   const unsigned int dim;
@@ -75,6 +91,8 @@ class Box {
   // Save result of sanity checks
   BoxStatus status;
   bool sane;
+  // Save if box is degenerate along any axes
+  std::vector<unsigned int> degenAxes;
 
 };
 
