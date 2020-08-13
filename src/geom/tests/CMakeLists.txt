@@ -9,5 +9,8 @@ include_directories(${CMAKE_BINARY_DIR}/src/geom)
 
 dagmc_install_test(topotool_unit_test  cpp)
 dagmc_install_test(box_test  cpp)
+dagmc_install_test(obb_test  cpp)
 
-dagmc_install_test_file(sphere-tetmesh.e)
+dagmc_install_test_file(sphere.e)
+dagmc_install_test_file(cube.e)
+dagmc_install_test_file(cube-rotate.e)

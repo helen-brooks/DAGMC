@@ -4,7 +4,6 @@ namespace DAGMC {
 
 typedef arma::mat Matrix;
 typedef arma::vec Vector;
-typedef arma::rowvec RowVec;
 
 // Class to perform geometrical queries on a generic box
 class Box {
@@ -57,7 +56,10 @@ class Box {
   // Face, edges and corners (or endpoints for degenerate boxes)
   // are inclusive
   // N.B. Will return false if box not sane
-  bool containsPoint(Vector point) const;
+  bool containsPoint(const Vector& point) const;
+
+  const Vector getMin() const { return minPoint; };
+  const Vector getMax() const { return maxPoint; };
 
   // Return the ith basis vector
   // Throw std::logic_error if out of bounds
@@ -67,7 +69,7 @@ class Box {
 
   // Define a status code for sanity checks
   enum BoxStatus { success, faildim, failnorm, failorth,
-                   failordered
+                   failordered, failunknown
                  };
 
  private:

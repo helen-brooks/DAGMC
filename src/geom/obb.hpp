@@ -35,6 +35,19 @@ class OrientedBoundingBox {
   // Return a const reference to box
   const Box& getBox() { return *box; };
 
+  // Geom queries
+  bool containsPoint(const Vector& point) {
+    return (box == nullptr) ? false : box->containsPoint(point);
+  };
+
+  // Overloaded version. Can also be used for libMesh::Node
+  // since that inherits from libMesh::Point
+  bool containsPoint(const libMesh::Point& pointLM) {
+    Vector pointVec = { pointLM(0), pointLM(1), pointLM(2) };
+    return containsPoint(pointVec);
+  };
+
+
  private:
   // Construct an OBB for an element set
   void construct_obb(const_element_iterator elemBegin,

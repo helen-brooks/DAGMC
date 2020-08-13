@@ -168,7 +168,7 @@ bool Box::intersectsRay(const Vector& orig, const Vector& dir) const {
 // }
 
 // Query if box contains point
-bool Box::containsPoint(Vector point) const {
+bool Box::containsPoint(const Vector& point) const {
 
   // Do nothing for broken box
   if (!sane)

@@ -99,8 +99,8 @@ void OBBUtils::getElemStats(const_element_iterator elemBegin,
                             std::vector<double>& areas, Vector& mean,
                             Matrix& points) {
   points.reset();
-  mean.reset();
   areas.clear();
+  mean.zeros(DIM);
 
   libmesh_try {
 
@@ -178,6 +178,11 @@ void OBBUtils::constructBasisFromCov(Matrix& cov, Matrix& basis) {
 
   // Ensure columns are normalised to unity
   basis = normalise(eigvec);
+
+  // Armadillo convention: eigvectors ordered by increasing eigenvalues
+  // Prefer decreasing so degenerate dims are last
+  basis = arma::fliplr(basis);
+
 }
 
 void OBBUtils::calcCov(std::vector<double>& areas, Vector& mean,
@@ -242,8 +247,10 @@ void OBBUtils::findExtremalPoints(Matrix& points, Matrix& basis,
   double MAX_DOUBLE = std::numeric_limits<double>::max();
   std::vector<double> minCoeffs(DIM, MAX_DOUBLE);
   std::vector<double> maxCoeffs(DIM, -MAX_DOUBLE);
+
   for (unsigned int ipoint = 0; ipoint < nPoints; ++ipoint) {
     Vector pvec = points.col(ipoint);
+
     // Loop over every basis vector
     for (unsigned int idim = 0; idim < DIM; ++idim) {
       Vector bvec = basis.col(idim);
@@ -263,8 +270,8 @@ void OBBUtils::findExtremalPoints(Matrix& points, Matrix& basis,
 
   // Now fetch the extremal points wrt the original axes
   for (unsigned int idim = 0; idim < DIM; ++idim) {
-    minPoint += minCoeffs.at(idim) * basis(idim);
-    maxPoint += maxCoeffs.at(idim) * basis(idim);
+    minPoint += minCoeffs.at(idim) * basis.col(idim);
+    maxPoint += maxCoeffs.at(idim) * basis.col(idim);
   }
 }
 
