@@ -1,10 +1,5 @@
 #include "box.hpp"
-// Libmesh headers
-#include "libmesh/libmesh.h"
-#include "libmesh/mesh.h"
-#include "libmesh/mesh_base.h"
-#include "libmesh/elem.h"
-#include "libmesh/node.h"
+#include "container.hpp"
 
 namespace DAGMC {
 
@@ -23,9 +18,9 @@ class OrientedBoundingBox {
   OrientedBoundingBox(const_element_iterator elemBegin,
                       const_element_iterator elemEnd,
                       ConstructMethod methodIn = ConstructMethod::CONT) :
-    method(methodIn),
-    elBegin(elemBegin), elEnd(elemBegin) {
-    construct_obb(elemBegin, elemEnd);
+    method(methodIn) {
+    elemsPtr = std::make_shared<DAGMC::ElemConstItContainer>(elemBegin, elemEnd);
+    construct_obb();
   }
 
   bool isConstructed() { return (box != nullptr); }
@@ -50,17 +45,15 @@ class OrientedBoundingBox {
 
  private:
   // Construct an OBB for an element set
-  void construct_obb(const_element_iterator elemBegin,
-                     const_element_iterator elemEnd);
+  void construct_obb();
 
   const ConstructMethod method;
 
   // The actual box
   std::shared_ptr<Box> box;
 
-  // Iterators to elements contained inside the box
-  const_element_iterator elBegin;
-  const_element_iterator elEnd;
+  // Storage for elements
+  std::shared_ptr<ElemContainer> elemsPtr;
 
 };
 
@@ -85,8 +78,7 @@ namespace OBBUtils {
 // A Hierarchical Structure for Rapid Interference Detection",
 // Gottschalk, Lin, and Manocha
 // section 4
-void constructBasisDiscrete(const_element_iterator elemBegin,
-                            const_element_iterator elemEnd,
+void constructBasisDiscrete(ElemContainer& elems,
                             Matrix& basis, Matrix& points);
 
 // Construct basis using the covariance with a continuous average
@@ -95,19 +87,15 @@ void constructBasisDiscrete(const_element_iterator elemBegin,
 // A Hierarchical Structure for Rapid Interference Detection",
 // Gottschalk, Lin, and Manocha
 // section 4
-void constructBasisCont(const_element_iterator elemBegin,
-                        const_element_iterator elemEnd,
+void constructBasisCont(ElemContainer& elems,
                         Matrix& basis, Matrix& points);
 
 // Construct a matrix of points
-void getPointsMatrix(const_element_iterator elemBegin,
-                     const_element_iterator elemEnd,
-                     Matrix& points);
+void getPointsMatrix(ElemContainer& elems, Matrix& points);
 
 // Compute all statistics needed to calculate covariance from a
 // set of elems. Assumes tris.
-void getElemStats(const_element_iterator elemBegin,
-                  const_element_iterator elemEnd,
+void getElemStats(ElemContainer& elems,
                   std::vector<double>& areas, Vector& mean,
                   Matrix& points);
 

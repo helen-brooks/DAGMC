@@ -7,8 +7,6 @@
 // TEST FIXTURES
 //---------------------------------------------------------------------------//
 
-//using namespace libMesh::MeshTools::Generation;
-
 class OBBTest : public ::testing::Test {
 
  protected:
@@ -309,9 +307,10 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
     = meshPtr->elements_begin();
   DAGMC::const_element_iterator elEnd
     = meshPtr->elements_end();
+  DAGMC::ElemConstItContainer elems(elBeg, elEnd);
 
   DAGMC::Matrix points;
-  ASSERT_NO_THROW(DAGMC::OBBUtils::getPointsMatrix(elBeg, elEnd, points));
+  ASSERT_NO_THROW(DAGMC::OBBUtils::getPointsMatrix(elems, points));
   ASSERT_EQ(points.n_cols, nFaces * nNodesPerFace);
   ASSERT_EQ(points.n_rows, 3);
 
@@ -369,7 +368,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   // Find element statistics
   std::vector<double> areas;
   DAGMC::Vector mean;
-  ASSERT_NO_THROW(DAGMC::OBBUtils::getElemStats(elBeg, elEnd, areas, mean, points));
+  ASSERT_NO_THROW(DAGMC::OBBUtils::getElemStats(elems, areas, mean, points));
   ASSERT_EQ(points.n_cols, nFaces * nNodesPerFace);
   ASSERT_EQ(points.n_rows, 3);
   ASSERT_EQ(mean.n_rows, 3);
@@ -405,7 +404,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   points.reset();
   basis.reset();
   errmsg.str("");
-  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisDiscrete(elBeg, elEnd, basis, points));
+  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisDiscrete(elems, basis, points));
   orthonormal = checkBasis(basis, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
@@ -413,17 +412,17 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   points.reset();
   basis.reset();
   errmsg.str("");
-  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisCont(elBeg, elEnd, basis, points));
+  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisCont(elems, basis, points));
   orthonormal = checkBasis(basis, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
   // Compute basis for a single face
   DAGMC::const_element_iterator el = elBeg;
   el++;
-  points.reset();
+  elems = DAGMC::ElemConstItContainer(elBeg, el);
   basis.reset();
   errmsg.str("");
-  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisDiscrete(elBeg, el, basis, points));
+  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisDiscrete(elems, basis, points));
   ASSERT_EQ(points.n_cols, nNodesPerFace);
   ASSERT_EQ(points.n_rows, 3);
   orthonormal = checkBasis(basis, errmsg);
@@ -432,7 +431,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   points.reset();
   basis.reset();
   errmsg.str("");
-  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisCont(elBeg, el, basis, points));
+  ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisCont(elems, basis, points));
   ASSERT_EQ(points.n_cols, nNodesPerFace);
   ASSERT_EQ(points.n_rows, 3);
   orthonormal = checkBasis(basis, errmsg);
@@ -520,9 +519,10 @@ TEST_F(OBBFileTest, OBBUtils) {
       = meshPtr->elements_begin();
     DAGMC::const_element_iterator elEnd
       = meshPtr->elements_end();
+    DAGMC::ElemConstItContainer elems(elBeg, elEnd);
 
     DAGMC::Matrix points;
-    ASSERT_NO_THROW(DAGMC::OBBUtils::getPointsMatrix(elBeg, elEnd, points)) << err.str();
+    ASSERT_NO_THROW(DAGMC::OBBUtils::getPointsMatrix(elems, points)) << err.str();
     // 468 = 6 faces * 26 elems / face * 3 nodes /elem
     EXPECT_EQ(points.n_cols, 468) << err.str();
     EXPECT_EQ(points.n_rows, 3) << err.str();
@@ -561,7 +561,7 @@ TEST_F(OBBFileTest, OBBUtils) {
     points.reset();
     std::vector<double> areas;
     DAGMC::Vector mean;
-    ASSERT_NO_THROW(DAGMC::OBBUtils::getElemStats(elBeg, elEnd, areas, mean, points)) << err.str();
+    ASSERT_NO_THROW(DAGMC::OBBUtils::getElemStats(elems, areas, mean, points)) << err.str();
     // 468 = 6 faces * 26 elems / face * 3 nodes /elem
     EXPECT_EQ(points.n_cols, 468) << err.str();
     // 156 = 6 faces * 26 elems / face

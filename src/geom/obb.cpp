@@ -3,19 +3,23 @@
 
 namespace DAGMC {
 
-void  OrientedBoundingBox::construct_obb(const_element_iterator elemBegin,
-                                         const_element_iterator elemEnd) {
+void  OrientedBoundingBox::construct_obb() {
+
+  if (elemsPtr == nullptr)
+    return;
+  //Fetch a reference to container
+  ElemContainer& elems = *elemsPtr;
 
   // Find basis vectors for the box
   Matrix basis;
   Matrix points;
   if (method == ConstructMethod::CONT) {
-    OBBUtils::constructBasisCont(elemBegin, elemEnd, basis, points);
+    OBBUtils::constructBasisCont(elems, basis, points);
   } else if (method == ConstructMethod::DISCRETE) {
-    OBBUtils::constructBasisDiscrete(elemBegin, elemEnd, basis, points);
+    OBBUtils::constructBasisDiscrete(elems, basis, points);
   } else {
     //Just get points and an axis-aligned basis
-    OBBUtils::getPointsMatrix(elemBegin, elemEnd, points);
+    OBBUtils::getPointsMatrix(elems, points);
     basis.eye(DIM, DIM);
   }
 
@@ -29,14 +33,13 @@ void  OrientedBoundingBox::construct_obb(const_element_iterator elemBegin,
 
 }
 
-void OBBUtils::constructBasisCont(const_element_iterator elemBegin,
-                                  const_element_iterator elemEnd,
+void OBBUtils::constructBasisCont(ElemContainer& elems,
                                   Matrix& basis, Matrix& points) {
 
   // Compute statistics on this element set
   std::vector<double> areas;
   Vector mean;
-  OBBUtils::getElemStats(elemBegin, elemEnd, areas, mean, points);
+  OBBUtils::getElemStats(elems, areas, mean, points);
 
   // Construct the covariance matrix from the statistics
   Matrix cov;
@@ -49,12 +52,11 @@ void OBBUtils::constructBasisCont(const_element_iterator elemBegin,
 
 
 // Construct basis using the covariance of the nodes of elements
-void OBBUtils::constructBasisDiscrete(const_element_iterator elemBegin,
-                                      const_element_iterator elemEnd,
+void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
                                       Matrix& basis, Matrix& points) {
 
   // Get all element vertices and put in matrix
-  OBBUtils::getPointsMatrix(elemBegin, elemEnd, points);
+  OBBUtils::getPointsMatrix(elems, points);
 
   // Construct the covariance matrix for the points
   // Pass transpose: function expects entries are rows
@@ -65,19 +67,19 @@ void OBBUtils::constructBasisDiscrete(const_element_iterator elemBegin,
 
 }
 // Construct a matrix of points from the nodes of a set of elements
-void OBBUtils::getPointsMatrix(const_element_iterator elemBegin,
-                               const_element_iterator elemEnd,
+void OBBUtils::getPointsMatrix(ElemContainer& elems,
                                Matrix& points) {
+  elems.reset();
   points.reset();
 
   libmesh_try {
     // Loop over elements
-    for (; elemBegin != elemEnd; ++elemBegin) {
-      const libMesh::Elem& element = **elemBegin;
-      unsigned int nNodes = element.n_nodes();
+    const libMesh::Elem* elemPtr;
+    while (elems.getNext(elemPtr)) {
+      unsigned int nNodes = elemPtr->n_nodes();
       for (unsigned int iNode = 0; iNode < nNodes; iNode++) {
         // Get the point associated with this node
-        const libMesh::Point& point = element.point(iNode);
+        const libMesh::Point& point = elemPtr->point(iNode);
         // Create a new row in matrix using initializer list.
         Vector pvec = {point(0), point(1), point(2)};
         // Insert column
@@ -94,10 +96,10 @@ void OBBUtils::getPointsMatrix(const_element_iterator elemBegin,
   }
 }
 
-void OBBUtils::getElemStats(const_element_iterator elemBegin,
-                            const_element_iterator elemEnd,
+void OBBUtils::getElemStats(ElemContainer& elems,
                             std::vector<double>& areas, Vector& mean,
                             Matrix& points) {
+  elems.reset();
   points.reset();
   areas.clear();
   mean.zeros(DIM);
@@ -105,12 +107,12 @@ void OBBUtils::getElemStats(const_element_iterator elemBegin,
   libmesh_try {
 
     // Loop over elements
-    for (; elemBegin != elemEnd; ++elemBegin) {
-      const libMesh::Elem& element = **elemBegin;
-      unsigned int nNodes = element.n_nodes();
+    const libMesh::Elem* elemPtr;
+    while (elems.getNext(elemPtr)) {
+      unsigned int nNodes = elemPtr->n_nodes();
 
       // Require elments are tris
-      libMesh::ElemType type = element.type();
+      libMesh::ElemType type = elemPtr->type();
       if (type != libMesh::ElemType::TRI3 || nNodes != 3) {
         points.reset();
         return;
@@ -120,7 +122,7 @@ void OBBUtils::getElemStats(const_element_iterator elemBegin,
       std::vector< Vector > elemPoints;
       for (unsigned int iNode = 0; iNode < nNodes; iNode++) {
         // Get the point associated with this node
-        const libMesh::Point& point = element.point(iNode);
+        const libMesh::Point& point = elemPtr->point(iNode);
         // Get point
         Vector pvec = {point(0), point(1), point(2)};
         // Insert column
