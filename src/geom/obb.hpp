@@ -1,3 +1,6 @@
+#ifndef DAG_OBB_HPP
+#define DAG_OBB_HPP
+
 #include "tree.hpp"
 #include "box.hpp"
 #include "container.hpp"
@@ -47,13 +50,16 @@ class OrientedBoundingBox : public TreeNode {
   bool containsPoint(const Vector& point) {
     return (box == nullptr) ? false : box->containsPoint(point);
   };
-
   // Overloaded version. Can also be used for libMesh::Node
   // since that inherits from libMesh::Point
   bool containsPoint(const libMesh::Point& pointLM) {
     Vector pointVec = { pointLM(0), pointLM(1), pointLM(2) };
     return containsPoint(pointVec);
   };
+
+  // Not a geometric query - might be that an element could fit inside box
+  // but checks if this elem lives inside elemcontainer
+  bool containsElem(libMesh::dof_id_type id);
 
 
  private:
@@ -164,3 +170,5 @@ void findExtremalPoints(Matrix& points, Matrix& basis,
 };
 
 }
+
+#endif

@@ -11,6 +11,7 @@ dagmc_install_test(topotool_unit_test  cpp)
 dagmc_install_test(box_test  cpp)
 dagmc_install_test(container_test cpp)
 dagmc_install_test(obb_test  cpp)
+dagmc_install_test(obbtree_test  cpp)
 
 dagmc_install_test_file(sphere.e)
 dagmc_install_test_file(cube.e)

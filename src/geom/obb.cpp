@@ -7,6 +7,25 @@ namespace DAGMC {
 // OrientedBoundingBox class methods
 //---------------------------------------------------------------------------//
 
+bool OrientedBoundingBox::containsElem(libMesh::dof_id_type id) {
+
+  // Send iterator back to start
+  elemsPtr->reset();
+
+  bool found = false;
+  // Loop over elements
+  const libMesh::Elem* elemptr;
+  while (elemsPtr->getNext(elemptr)) {
+    if (elemptr->id() == id) {
+      found = true;
+      break;
+    }
+  }
+
+  return found;
+}
+
+
 void  OrientedBoundingBox::construct_obb() {
 
   if (elemsPtr == nullptr)
@@ -84,7 +103,7 @@ std::shared_ptr<TreeNode> OrientedBoundingBox::getChild(std::shared_ptr<ElemCont
     child =  std::make_shared<OrientedBoundingBox>(elemsPtr, method, shared_from_this());
   } catch (std::bad_weak_ptr& e) {
     // This can happen if OBB was not created through make_shared
-    std::cout << "Error: " << e.what() << " in " << __func__ << std::endl;
+    std::cerr << "Error: " << e.what() << " in " << __func__ << std::endl;
     child = nullptr;
   }
   return child;
@@ -139,6 +158,7 @@ void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContaine
     if (elemsPlus.empty() || elemsMinus.empty())
       continue;
     else {
+
       // Create containers for these elements
       std::shared_ptr<ElemContainer> contPlus
         = std::make_shared<ElemConstPtrContainer>(elemsPlus);
