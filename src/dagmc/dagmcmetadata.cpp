@@ -400,8 +400,8 @@ bool remove_duplicates) {
 
   // parse data from geometry
   DAGMC::ErrorCode rval = DAG->parse_properties(metadata_keywords,
-                                               keyword_synonyms,
-                                               delimiters.c_str());
+                                                keyword_synonyms,
+                                                delimiters.c_str());
 
   if (DAGMC::DAG_SUCCESS != rval) {
     std::cerr << "DAGMC failed to parse metadata properties" <<  std::endl;

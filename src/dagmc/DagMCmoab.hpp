@@ -46,7 +46,7 @@ class MoabErrHandler : public ErrorHandler {
 
 class DagMCmoab : public DagMCBase {
 
-public:
+ public:
   // Constructor
   DagMCmoab(std::shared_ptr<Interface> mb_impl = nullptr, double overlap_tolerance = 0., double numerical_precision = .001);
   // Deprecated Constructor

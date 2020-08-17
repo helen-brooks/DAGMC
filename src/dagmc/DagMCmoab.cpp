@@ -39,7 +39,7 @@ DagMCmoab::DagMCmoab(std::shared_ptr<Interface> mb_impl, double overlap_toleranc
 #ifdef DOUBLE_DOWN
   std::cout << "Using the DOUBLE-DOWN interface to Embree." << std::endl;
 #endif
-														  
+
   moab_instance_created = false;
 
   // Create error handler
@@ -182,9 +182,9 @@ ErrorCode DagMCmoab::setup_obbs() {
   if (!GTT->have_obb_tree()) {
     std::cout << "Building acceleration data structures..." << std::endl;
 #ifdef DOUBLE_DOWN
-    rval = 
-    errHandler->checkSetErr(ray_tracer->init();,
-                            "Failed to build obb trees");
+    rval =
+        errHandler->checkSetErr(ray_tracer->init();,
+                                "Failed to build obb trees");
 #else
     errHandler->checkSetErr(GTT->construct_obb_trees(),
                             "Failed to build obb trees");
@@ -251,41 +251,41 @@ ErrorCode DagMCmoab::finish_loading() {
 // *****************************************************************************
 
 ErrorCode DagMCmoab::ray_fire(const EntityHandle volume, const double point[3],
-                          const double dir[3], EntityHandle& next_surf,
-                          double& next_surf_dist,
-                          RayHistory* history,
-                          double user_dist_limit, int ray_orientation,
-                          OrientedBoxTreeTool::TrvStats* stats) {
-    return ErrorCode (ray_tracer->ray_fire(volume, point, dir, next_surf, next_surf_dist,
-				    history, user_dist_limit, ray_orientation,
-				    stats));
+                              const double dir[3], EntityHandle& next_surf,
+                              double& next_surf_dist,
+                              RayHistory* history,
+                              double user_dist_limit, int ray_orientation,
+                              OrientedBoxTreeTool::TrvStats* stats) {
+  return ErrorCode(ray_tracer->ray_fire(volume, point, dir, next_surf, next_surf_dist,
+                                        history, user_dist_limit, ray_orientation,
+                                        stats));
 }
 
 ErrorCode DagMCmoab::point_in_volume(const EntityHandle volume, const double xyz[3],
-                                 int& result, const double* uvw,
-                                 const RayHistory* history) {
+                                     int& result, const double* uvw,
+                                     const RayHistory* history) {
   return ErrorCode(ray_tracer->point_in_volume(volume, xyz, result, uvw, history));
 }
 
 ErrorCode DagMCmoab::test_volume_boundary(const EntityHandle volume,
-                                      const EntityHandle surface,
-                                      const double xyz[3], const double uvw[3],
-                                      int& result,
-                                      const RayHistory* history) {
+                                          const EntityHandle surface,
+                                          const double xyz[3], const double uvw[3],
+                                          int& result,
+                                          const RayHistory* history) {
   return ErrorCode(ray_tracer->test_volume_boundary(volume, surface, xyz, uvw, result,
-						      history));
+                                                    history));
 }
 
 // use spherical area test to determine inside/outside of a polyhedron.
 ErrorCode DagMCmoab::point_in_volume_slow(EntityHandle volume, const double xyz[3],
-                                      int& result) {
+                                          int& result) {
   return ErrorCode(ray_tracer->point_in_volume_slow(volume, xyz, result));
 }
 
 // detemine distance to nearest surface
 ErrorCode DagMCmoab::closest_to_location(EntityHandle volume,
-                                     const double coords[3], double& result,
-                                     EntityHandle* surface) {
+                                         const double coords[3], double& result,
+                                         EntityHandle* surface) {
   return ErrorCode(ray_tracer->closest_to_location(volume, coords, result, surface));
 }
 
@@ -314,8 +314,8 @@ ErrorCode DagMCmoab::surface_sense(EntityHandle volume, EntityHandle surface,
 }
 
 ErrorCode DagMCmoab::get_angle(EntityHandle surf, const double in_pt[3],
-                           double angle[3],
-                           const RayHistory* history) {
+                               double angle[3],
+                               const RayHistory* history) {
   return ErrorCode(ray_tracer->get_normal(surf, in_pt, angle, history));
 }
 
