@@ -1,3 +1,6 @@
+#ifndef DAG_BOX_HPP
+#define DAG_BOX_HPP
+
 #include <armadillo>
 
 namespace DAGMC {
@@ -107,3 +110,5 @@ class Box {
 
 
 }
+
+#endif

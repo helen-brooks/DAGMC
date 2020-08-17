@@ -1,3 +1,6 @@
+#ifndef DAG_GTT_HPP
+#define DAG_GTT_HPP
+
 // C++ include files that we need
 #include <iostream>
 // Libmesh headers
@@ -84,3 +87,5 @@ class GeomTopoToolLM : public GeomTopoTool {
 };
 
 }// End namespace DAGMC
+
+#endif

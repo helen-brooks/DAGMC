@@ -1,3 +1,6 @@
+#ifndef DAG_CONTAINER_HPP
+#define DAG_CONTAINER_HPP
+
 #include<set>
 
 // Libmesh headers
@@ -118,3 +121,5 @@ class ElemConstPtrContainer : public ElemContainer {
 };
 
 }
+
+#endif
