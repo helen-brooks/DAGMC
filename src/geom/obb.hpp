@@ -1,3 +1,4 @@
+#include "tree.hpp"
 #include "box.hpp"
 #include "container.hpp"
 
@@ -12,16 +13,28 @@ typedef libMesh::MeshBase::const_element_iterator const_element_iterator;
 
 // Class to construct a box containing a set of libMesh elements
 // Default is oriented, but can build aligned box
-class OrientedBoundingBox {
+class OrientedBoundingBox : public TreeNode {
 
  public:
   OrientedBoundingBox(const_element_iterator elemBegin,
                       const_element_iterator elemEnd,
-                      ConstructMethod methodIn = ConstructMethod::CONT) :
-    method(methodIn) {
+                      ConstructMethod methodIn = ConstructMethod::CONT,
+                      std::shared_ptr<TreeNode> parentIn = nullptr) :
+    method(methodIn),
+    TreeNode(parentIn) {
     elemsPtr = std::make_shared<DAGMC::ElemConstItContainer>(elemBegin, elemEnd);
     construct_obb();
   }
+
+  OrientedBoundingBox(std::shared_ptr<ElemContainer> elemsPtrIn,
+                      ConstructMethod methodIn = ConstructMethod::CONT,
+                      std::shared_ptr<TreeNode> parentIn = nullptr) :
+    method(methodIn),
+    elemsPtr(elemsPtrIn),
+    TreeNode(parentIn) {
+    construct_obb();
+  };
+
 
   bool isConstructed() { return (box != nullptr); }
   bool isSane() { return (box == nullptr) ? false : box->isSane(); };
@@ -47,7 +60,24 @@ class OrientedBoundingBox {
   // Construct an OBB for an element set
   void construct_obb();
 
+  // Construct basis for the OBB and internally set mean vector
+  void constructBasis(ElemContainer& elems, Matrix& basis, Matrix& points);
+
+  // Partition elements if possible and create new child OBBs
+  bool setChildren() override;
+
+  // Implmement subdivision algorithm from "OBBTree:
+  // A Hierarchical Structure for Rapid Interference Detection",
+  // Gottschalk, Lin, and Manocha, section 4
+  void getPartitions(std::vector<std::shared_ptr<ElemContainer> >& partitions);
+
+  Vector getElemMidpoint(const libMesh::Elem* elemPtr);
+
+  // Method for constructing box
   const ConstructMethod method;
+
+  // Mean vector of points
+  Vector meanPoint;
 
   // The actual box
   std::shared_ptr<Box> box;
@@ -79,6 +109,8 @@ namespace OBBUtils {
 // Gottschalk, Lin, and Manocha
 // section 4
 void constructBasisDiscrete(ElemContainer& elems,
+                            Matrix& basis, Matrix& points, Vector& mean);
+void constructBasisDiscrete(ElemContainer& elems,
                             Matrix& basis, Matrix& points);
 
 // Construct basis using the covariance with a continuous average
@@ -88,16 +120,31 @@ void constructBasisDiscrete(ElemContainer& elems,
 // Gottschalk, Lin, and Manocha
 // section 4
 void constructBasisCont(ElemContainer& elems,
+                        Matrix& basis, Matrix& points, Vector& mean);
+void constructBasisCont(ElemContainer& elems,
                         Matrix& basis, Matrix& points);
 
-// Construct a matrix of points
+// Construct a matrix of points (optionally fetch mean)
+void getPointsMatrix(ElemContainer& elems, Matrix& points, Vector& mean);
 void getPointsMatrix(ElemContainer& elems, Matrix& points);
+
+//  Insert points for a single element and calc mean point
+void getSingleElemPoints(const libMesh::Elem* elemPtr,
+                         Matrix& points,
+                         Vector& elemMean);
 
 // Compute all statistics needed to calculate covariance from a
 // set of elems. Assumes tris.
 void getElemStats(ElemContainer& elems,
                   std::vector<double>& areas, Vector& mean,
                   Matrix& points);
+
+// Insert points for single element into points, and fetch stats
+// Assumes tris.
+void getSingleElemStats(const libMesh::Elem* elemPtr,
+                        Matrix& points,
+                        Vector& elemMean,
+                        double& area);
 
 // Compute the covariance given various statistics
 void calcCov(std::vector<double>& areas, Vector& mean,

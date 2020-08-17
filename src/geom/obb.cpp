@@ -3,6 +3,10 @@
 
 namespace DAGMC {
 
+//---------------------------------------------------------------------------//
+// OrientedBoundingBox class methods
+//---------------------------------------------------------------------------//
+
 void  OrientedBoundingBox::construct_obb() {
 
   if (elemsPtr == nullptr)
@@ -13,15 +17,7 @@ void  OrientedBoundingBox::construct_obb() {
   // Find basis vectors for the box
   Matrix basis;
   Matrix points;
-  if (method == ConstructMethod::CONT) {
-    OBBUtils::constructBasisCont(elems, basis, points);
-  } else if (method == ConstructMethod::DISCRETE) {
-    OBBUtils::constructBasisDiscrete(elems, basis, points);
-  } else {
-    //Just get points and an axis-aligned basis
-    OBBUtils::getPointsMatrix(elems, points);
-    basis.eye(DIM, DIM);
-  }
+  constructBasis(elems, basis, points);
 
   // Find the extremal points along the basis vecs
   Vector minPoint;
@@ -33,12 +29,141 @@ void  OrientedBoundingBox::construct_obb() {
 
 }
 
+void OrientedBoundingBox::constructBasis(ElemContainer& elems,
+                                         Matrix& basis,
+                                         Matrix& points) {
+
+  if (method == ConstructMethod::CONT) {
+    OBBUtils::constructBasisCont(elems, basis, points, meanPoint);
+  } else if (method == ConstructMethod::DISCRETE) {
+    OBBUtils::constructBasisDiscrete(elems, basis, points, meanPoint);
+  } else {
+    //Just get points and an axis-aligned basis
+    OBBUtils::getPointsMatrix(elems, points, meanPoint);
+    basis.eye(DIM, DIM);
+  }
+
+}
+
+bool OrientedBoundingBox::setChildren() {
+
+  // Check construction was successful
+  if (!isSane())
+    return false;
+
+  // Partition elements
+  std::vector<std::shared_ptr<ElemContainer> > partitions;
+  getPartitions(partitions);
+
+  // If partitions were found, now create
+  // child OBBs for each partition
+  for (auto& part : partitions) {
+    // Shouldn't happen
+    if (part == nullptr)
+      return false;
+
+    std::shared_ptr<TreeNode> child
+      = std::make_shared<OrientedBoundingBox>(part, method, shared_from_this());
+
+    // Save
+    if (child != nullptr)
+      children.push_back(child);
+
+  }
+
+  // Done
+  return true;
+}
+
+void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContainer> >& partitions) {
+
+  // Sort basis by box side length
+  std::vector<unsigned int> order;
+  box->getBasisOrder(order);
+
+  // No non-degnerate dirs, or something went wrong
+  if (order.empty())
+    return;
+
+  // Attempt to subdivide perpendicular to sides of decreasing length
+  for (auto& ivec : order) {
+
+    // Splitting plane is defined as having normal of basisVector,
+    // and contains mean point vector.
+    const Vector bVec = box->basisVec(ivec);
+
+    //Calculate the projection of the mean point vector on this side
+    double meanCoord = arma::dot(meanPoint, bVec);
+
+    // Partition elements according to which side of the
+    // splitting plane they are
+    std::set<const libMesh::Elem*> elemsPlus;
+    std::set<const libMesh::Elem*> elemsMinus;
+
+    // Send iterator back to start
+    elemsPtr->reset();
+    // Loop over elements
+    const libMesh::Elem* elemptr;
+    while (elemsPtr->getNext(elemptr)) {
+      //Get element midpoint
+      Vector midpoint = getElemMidpoint(elemptr);
+
+      //Find projection along basis vector relative to mean
+      double coord = arma::dot(midpoint, bVec) - meanCoord;
+
+      // Sort (inclusive: elems in plane go into elemsMinus)
+      if (coord > 0.) {
+        elemsPlus.insert(elemptr);
+      } else {
+        elemsMinus.insert(elemptr);
+      }
+    }
+
+    // If either set is empty, box is indivisible along this dir.
+    if (elemsPlus.empty() || elemsMinus.empty())
+      continue;
+    else {
+      // Create containers for these elements
+      std::shared_ptr<ElemContainer> contPlus
+        = std::make_shared<ElemConstPtrContainer>(elemsPlus);
+      std::shared_ptr<ElemContainer> contMinus
+        = std::make_shared<ElemConstPtrContainer>(elemsMinus);
+
+      //Save
+      partitions.push_back(contPlus);
+      partitions.push_back(contMinus);
+
+      // Done. Exit loop
+      break;
+    }
+  }
+}
+
+Vector OrientedBoundingBox::getElemMidpoint(const libMesh::Elem* elemPtr) {
+
+  Vector midpoint;
+  Matrix points;
+  if (method == ConstructMethod::CONT) {
+    double area;
+    OBBUtils::getSingleElemStats(elemPtr, points, midpoint, area);
+  } else {
+    OBBUtils::getSingleElemPoints(elemPtr, points, midpoint);
+  }
+  return midpoint;
+}
+
+
+//---------------------------------------------------------------------------//
+// OBBUtils namespace methods
+//---------------------------------------------------------------------------//
+
 void OBBUtils::constructBasisCont(ElemContainer& elems,
-                                  Matrix& basis, Matrix& points) {
+                                  Matrix& basis,
+                                  Matrix& points,
+                                  Vector& mean) {
 
   // Compute statistics on this element set
   std::vector<double> areas;
-  Vector mean;
   OBBUtils::getElemStats(elems, areas, mean, points);
 
   // Construct the covariance matrix from the statistics
@@ -50,13 +175,22 @@ void OBBUtils::constructBasisCont(ElemContainer& elems,
 
 }
 
+void OBBUtils::constructBasisCont(ElemContainer& elems,
+                                  Matrix& basis,
+                                  Matrix& points) {
+  Vector dummy;
+  OBBUtils::constructBasisCont(elems, basis, points, dummy);
+}
+
 
 // Construct basis using the covariance of the nodes of elements
 void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
-                                      Matrix& basis, Matrix& points) {
+                                      Matrix& basis,
+                                      Matrix& points,
+                                      Vector& mean) {
 
   // Get all element vertices and put in matrix
-  OBBUtils::getPointsMatrix(elems, points);
+  OBBUtils::getPointsMatrix(elems, points, mean);
 
   // Construct the covariance matrix for the points
   // Pass transpose: function expects entries are rows
@@ -66,38 +200,81 @@ void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
   OBBUtils::constructBasisFromCov(covMat, basis);
 
 }
+
+void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
+                                      Matrix& basis,
+                                      Matrix& points) {
+  Vector dummy;
+  constructBasisDiscrete(elems, basis, points, dummy);
+}
+
 // Construct a matrix of points from the nodes of a set of elements
 void OBBUtils::getPointsMatrix(ElemContainer& elems,
-                               Matrix& points) {
+                               Matrix& points,
+                               Vector& mean) {
   elems.reset();
   points.reset();
+  mean.zeros(DIM);
 
   libmesh_try {
+
     // Loop over elements
     const libMesh::Elem* elemPtr;
+    unsigned int nElems = 0;
     while (elems.getNext(elemPtr)) {
-      unsigned int nNodes = elemPtr->n_nodes();
-      for (unsigned int iNode = 0; iNode < nNodes; iNode++) {
-        // Get the point associated with this node
-        const libMesh::Point& point = elemPtr->point(iNode);
-        // Create a new row in matrix using initializer list.
-        Vector pvec = {point(0), point(1), point(2)};
-        // Insert column
-        if (points.n_cols == 0) {
-          points = pvec;
-        } else {
-          points.insert_cols(points.n_cols, pvec);
-        }
-      }
+      nElems++;
+
+      // Insert points
+      Vector elemMean;
+      OBBUtils::getSingleElemPoints(elemPtr, points, elemMean);
+
+      // Add contribution to mean
+      mean += elemMean;
+
     }
+    // Correctly normalise mean vector to number of elems
+    mean *= (1.0 / double(nElems));
+
   }
   libmesh_catch(libMesh::LogicError & e) {
     points.reset();
   }
 }
+void OBBUtils::getPointsMatrix(ElemContainer& elems,
+                               Matrix& points) {
+  Vector dummy;
+  getPointsMatrix(elems, points, dummy);
+}
+
+void OBBUtils::getSingleElemPoints(const libMesh::Elem* elemPtr,
+                                   Matrix& points,
+                                   Vector& elemMean) {
+  elemMean.zeros(DIM);
+  if (elemPtr == nullptr)
+    return;
+
+  unsigned int nNodes = elemPtr->n_nodes();
+  for (unsigned int iNode = 0; iNode < nNodes; iNode++) {
+    // Get the point associated with this node
+    const libMesh::Point& point = elemPtr->point(iNode);
+    // Create a new vector using initializer list.
+    Vector pvec = {point(0), point(1), point(2)};
+    // Insert column
+    if (points.n_cols == 0) {
+      points = pvec;
+    } else {
+      points.insert_cols(points.n_cols, pvec);
+    }
+    // Add contribution to mean
+    elemMean += pvec;
+  }
+  //Normalise mean
+  elemMean *= 1.0 / double(nNodes);
+}
 
 void OBBUtils::getElemStats(ElemContainer& elems,
-                            std::vector<double>& areas, Vector& mean,
+                            std::vector<double>& areas,
+                            Vector& mean,
                             Matrix& points) {
   elems.reset();
   points.reset();
@@ -109,41 +286,17 @@ void OBBUtils::getElemStats(ElemContainer& elems,
     // Loop over elements
     const libMesh::Elem* elemPtr;
     while (elems.getNext(elemPtr)) {
-      unsigned int nNodes = elemPtr->n_nodes();
 
-      // Require elments are tris
-      libMesh::ElemType type = elemPtr->type();
-      if (type != libMesh::ElemType::TRI3 || nNodes != 3) {
-        points.reset();
-        return;
-      }
+      // Fetch data for this element, and append points
+      double area;
+      Vector elemMean;
+      OBBUtils::getSingleElemStats(elemPtr, points, elemMean, area);
 
-      // Fetch coords of this element
-      std::vector< Vector > elemPoints;
-      for (unsigned int iNode = 0; iNode < nNodes; iNode++) {
-        // Get the point associated with this node
-        const libMesh::Point& point = elemPtr->point(iNode);
-        // Get point
-        Vector pvec = {point(0), point(1), point(2)};
-        // Insert column
-        if (points.n_cols == 0) {
-          points = pvec;
-        } else {
-          points.insert_cols(points.n_cols, pvec);
-        }
-        elemPoints.push_back(pvec);
-      }
+      // Add contribution to mean
+      mean += elemMean;
 
-      const Vector& p = elemPoints.at(0);
-      const Vector& q = elemPoints.at(1);
-      const Vector& r = elemPoints.at(2);
-
-      // Compute area
-      double area = 0.5 * arma::norm(arma::cross(q - p, r - p));
+      // Save area
       areas.push_back(area);
-
-      // Compute contribution to mean
-      mean += (p + q + r) / (area * 6.0);
 
     } // End loop over elems
 
@@ -160,6 +313,54 @@ void OBBUtils::getElemStats(ElemContainer& elems,
     areas.clear();
   }
 
+}
+
+void OBBUtils::getSingleElemStats(const libMesh::Elem* elemPtr,
+                                  Matrix& points,
+                                  Vector& elemMean,
+                                  double& area) {
+
+  elemMean.zeros(DIM);
+
+  if (elemPtr == nullptr)
+    return;
+
+  unsigned int nNodes = elemPtr->n_nodes();
+  // Require elments are tris
+  libMesh::ElemType type = elemPtr->type();
+  if (type != libMesh::ElemType::TRI3 || nNodes != 3) {
+    points.reset();
+    return;
+  }
+
+  unsigned int offset = points.n_cols;
+
+  // Get points
+  for (unsigned int iNode = 0; iNode < nNodes; iNode++) {
+    // Get the point associated with this node
+    const libMesh::Point& point = elemPtr->point(iNode);
+    // Get point
+    Vector pvec = {point(0), point(1), point(2)};
+    // Insert column
+    if (points.n_cols == 0) {
+      points = pvec;
+    } else {
+      points.insert_cols(points.n_cols, pvec);
+    }
+
+    // Compute contribution to mean
+    elemMean += pvec;
+  }
+
+  const Vector& p = points.col(offset + 0);
+  const Vector& q = points.col(offset + 1);
+  const Vector& r = points.col(offset + 2);
+
+  // Compute area
+  area = 0.5 * arma::norm(arma::cross(q - p, r - p));
+
+  // Normalise mean
+  elemMean /= (area * 6.0);
 }
 
 void OBBUtils::constructBasisFromCov(Matrix& cov, Matrix& basis) {
