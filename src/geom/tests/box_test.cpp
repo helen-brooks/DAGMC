@@ -126,6 +126,26 @@ TEST(BoxTest, UnitBox) {
   EXPECT_TRUE(unitbox.intersectsRay(orig3, dir1));
   EXPECT_TRUE(unitbox.intersectsRay(orig3, dir2));
 
+  // Get box sides
+  std::map< double, std::vector< unsigned int> > sides;
+  unitbox.getSides(sides);
+  ASSERT_EQ(sides.size(), 1);
+  double length = (sides.begin())->first;
+  std::vector<unsigned int> order = (sides.begin())->second;
+  EXPECT_EQ(length, 1.0);
+  ASSERT_EQ(order.size(), 3);
+  EXPECT_EQ(order.at(0), 0);
+  EXPECT_EQ(order.at(1), 1);
+  EXPECT_EQ(order.at(2), 2);
+
+  // Get "ordered basis"
+  // -> will just be order we found in
+  unitbox.getBasisOrder(order);
+  ASSERT_EQ(order.size(), 3);
+  EXPECT_EQ(order.at(0), 0);
+  EXPECT_EQ(order.at(1), 1);
+  EXPECT_EQ(order.at(2), 2);
+
 }
 
 //Tests for an aligned box
@@ -157,6 +177,22 @@ TEST(BoxTest, AlignedBox) {
   EXPECT_EQ(v3(0), 0.);
   EXPECT_EQ(v3(1), 0.);
   EXPECT_EQ(v3(2), 1.);
+
+  // Get box sides
+  std::map< double, std::vector< unsigned int> > sides;
+  box.getSides(sides);
+  EXPECT_EQ(sides.size(), 3);
+  EXPECT_TRUE(sides.find(3.0) != sides.end());
+  EXPECT_TRUE(sides.find(2.0) != sides.end());
+  EXPECT_TRUE(sides.find(1.0) != sides.end());
+
+  // Get basis indices ordered in decreasing side length
+  std::vector<unsigned int> order;
+  box.getBasisOrder(order);
+  ASSERT_EQ(order.size(), 3);
+  EXPECT_EQ(order.at(0), 2);
+  EXPECT_EQ(order.at(1), 1);
+  EXPECT_EQ(order.at(2), 0);
 
   // Check some points
   DAGMC::Vector inside1 = {1.5, 2.0, 2.0};
@@ -344,8 +380,8 @@ TEST(BoxTest, OrientedBox) {
 
   DAGMC::Vector max = {0, 1., 1.};;
   DAGMC::Vector min = {0, -1., -1.};
-  DAGMC::Matrix basis = { {sqrt(2) / 2., -sqrt(2) / 2., 0},
-    {sqrt(2) / 2., sqrt(2) / 2., 0},
+  DAGMC::Matrix basis = { {sqrt(2.) / 2., -sqrt(2.) / 2., 0},
+    {sqrt(2.) / 2., sqrt(2.) / 2., 0},
     {0., 0., 1.}
   };
 
@@ -356,6 +392,21 @@ TEST(BoxTest, OrientedBox) {
   ASSERT_EQ(box.getBoxStatus(), 0);
   ASSERT_TRUE(box.isSane());
   EXPECT_EQ(box.nDegenerate(), 0);
+
+  // Get box sides
+  std::map< double, std::vector< unsigned int> > sides;
+  box.getSides(sides);
+  EXPECT_EQ(sides.size(), 2);
+  EXPECT_TRUE(sides.find(sqrt(2.)) != sides.end());
+  EXPECT_TRUE(sides.find(2.) != sides.end());
+
+  // Get basis indices ordered in decreasing side length
+  std::vector<unsigned int> order;
+  box.getBasisOrder(order);
+  ASSERT_EQ(order.size(), 3);
+  EXPECT_EQ(order.at(0), 2);
+  EXPECT_EQ(order.at(1), 0);
+  EXPECT_EQ(order.at(2), 1);
 
   // Check some points
   DAGMC::Vector orig1 = { 0., 0., 0.};
@@ -405,6 +456,13 @@ TEST(BoxTest, DegenerateBoxSquare) {
   EXPECT_EQ(box.nDegenerate(), 1);
   EXPECT_EQ(box.getDegenDir(0), 2);
 
+  // Get basis indices ordered in decreasing side length
+  std::vector<unsigned int> order;
+  box.getBasisOrder(order);
+  ASSERT_EQ(order.size(), 2);
+  EXPECT_EQ(order.at(0), 0);
+  EXPECT_EQ(order.at(1), 1);
+
   // Check points
   DAGMC::Vector inside  = {0., 0., 0.};
   DAGMC::Vector outside = {0., 0., 1.};
@@ -439,6 +497,12 @@ TEST(BoxTest, DegenerateBoxLine) {
   EXPECT_EQ(box.nDegenerate(), 2);
   EXPECT_EQ(box.getDegenDir(0), 1);
   EXPECT_EQ(box.getDegenDir(1), 2);
+
+  // Get basis indices ordered in decreasing side length
+  std::vector<unsigned int> order;
+  box.getBasisOrder(order);
+  ASSERT_EQ(order.size(), 1);
+  EXPECT_EQ(order.at(0), 0);
 
   // Check points
   DAGMC::Vector inside  = {0., 0., 0.};
@@ -489,6 +553,10 @@ TEST(BoxTest, DegenerateBoxPoint) {
   EXPECT_EQ(box.getDegenDir(1), 1);
   EXPECT_EQ(box.getDegenDir(2), 2);
 
+  // Get basis indices ordered in decreasing side length
+  std::vector<unsigned int> order;
+  box.getBasisOrder(order);
+  EXPECT_EQ(order.size(), 0);
 
   // Check the point is contained
   EXPECT_TRUE(box.containsPoint(point));

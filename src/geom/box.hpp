@@ -72,6 +72,8 @@ class Box {
   // according to decreasing side length.
   void getBasisOrder(std::vector<unsigned int>& order) const;
 
+  void getSides(std::map< double, std::vector< unsigned int> >& sides) const;
+
   // Define a status code for sanity checks
   enum BoxStatus { success, faildim, failnorm, failorth,
                    failordered, failunknown

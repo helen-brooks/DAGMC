@@ -197,20 +197,10 @@ bool Box::containsPoint(const Vector& point) const {
 void Box::getBasisOrder(std::vector<unsigned int>& order) const {
 
   order.clear();
-  Vector diff = maxPoint - minPoint;
   // Save side length -> basis vector to sort automatically
   // vector is protection against degnerate sides
   std::map< double, std::vector< unsigned int> > sides;
-  for (unsigned int idim = 0; idim; idim++) {
-    double length = arma::dot(diff, basis.col(idim));
-    // Ignore degenerate directions.
-    if (length == 0.)
-      continue;
-    if (sides.find(length) == sides.end()) {
-      sides[length] = std::vector<unsigned int>();
-    }
-    sides[length].push_back(idim);
-  }
+  getSides(sides);
 
   // Loop over sides in decreasing side length
   for (auto side = sides.rbegin(); side != sides.rend(); ++side) {
@@ -224,6 +214,22 @@ void Box::getBasisOrder(std::vector<unsigned int>& order) const {
     order.clear();
   }
 
+}
+
+void Box::getSides(std::map< double, std::vector< unsigned int> >& sides) const {
+
+  sides.clear();
+  Vector diff = maxPoint - minPoint;
+  for (unsigned int idim = 0; idim < dim; idim++) {
+    double length = arma::dot(diff, basis.col(idim));
+    // Ignore degenerate directions.
+    if (length == 0.)
+      continue;
+    if (sides.find(length) == sides.end()) {
+      sides[length] = std::vector<unsigned int>();
+    }
+    sides[length].push_back(idim);
+  }
 }
 
 }
