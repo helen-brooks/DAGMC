@@ -67,6 +67,11 @@ class Box {
     return basis.col(i);
   }
 
+  // Return the order (by index) of the
+  // non-degenerate box basis vectors
+  // according to decreasing side length.
+  void getBasisOrder(std::vector<unsigned int>& order) const;
+
   // Define a status code for sanity checks
   enum BoxStatus { success, faildim, failnorm, failorth,
                    failordered, failunknown

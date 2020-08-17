@@ -194,4 +194,36 @@ bool Box::containsPoint(const Vector& point) const {
   return true;
 }
 
+void Box::getBasisOrder(std::vector<unsigned int>& order) const {
+
+  order.clear();
+  Vector diff = maxPoint - minPoint;
+  // Save side length -> basis vector to sort automatically
+  // vector is protection against degnerate sides
+  std::map< double, std::vector< unsigned int> > sides;
+  for (unsigned int idim = 0; idim; idim++) {
+    double length = arma::dot(diff, basis.col(idim));
+    // Ignore degenerate directions.
+    if (length == 0.)
+      continue;
+    if (sides.find(length) == sides.end()) {
+      sides[length] = std::vector<unsigned int>();
+    }
+    sides[length].push_back(idim);
+  }
+
+  // Loop over sides in decreasing side length
+  for (auto side = sides.rbegin(); side != sides.rend(); ++side) {
+    for (auto& ivec : side->second) {
+      order.push_back(ivec);
+    }
+  }
+
+  // Something went wrong
+  if (order.size() != (dim - nDegenerate())) {
+    order.clear();
+  }
+
+}
+
 }
