@@ -66,6 +66,9 @@ class OrientedBoundingBox : public TreeNode {
   // Partition elements if possible and create new child OBBs
   bool setChildren() override;
 
+  // Create a child box for a set of elems
+  std::shared_ptr<TreeNode> getChild(std::shared_ptr<ElemContainer> elemsPtr);
+
   // Implmement subdivision algorithm from "OBBTree:
   // A Hierarchical Structure for Rapid Interference Detection",
   // Gottschalk, Lin, and Manocha, section 4

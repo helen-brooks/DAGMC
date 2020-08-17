@@ -62,17 +62,33 @@ bool OrientedBoundingBox::setChildren() {
     if (part == nullptr)
       return false;
 
-    std::shared_ptr<TreeNode> child
-      = std::make_shared<OrientedBoundingBox>(part, method, shared_from_this());
+    std::shared_ptr<TreeNode> child = getChild(part);
 
     // Save
     if (child != nullptr)
       children.push_back(child);
+    // error
+    else
+      return false;
 
   }
 
   // Done
   return true;
+}
+
+std::shared_ptr<TreeNode> OrientedBoundingBox::getChild(std::shared_ptr<ElemContainer> elemsPtr) {
+
+  std::shared_ptr<TreeNode> child;
+  try {
+    child =  std::make_shared<OrientedBoundingBox>(elemsPtr, method, shared_from_this());
+  } catch (std::bad_weak_ptr& e) {
+    // This can happen if OBB was not created through make_shared
+    std::cout << "Error: " << e.what() << " in " << __func__ << std::endl;
+    child = nullptr;
+  }
+  return child;
+
 }
 
 void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContainer> >& partitions) {

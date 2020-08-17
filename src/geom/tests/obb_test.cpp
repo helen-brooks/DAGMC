@@ -472,6 +472,42 @@ TEST_F(OBBTetTest, OBBConstructor) {
 
 }
 
+
+TEST_F(OBBTetTest, SharedPtrTest) {
+
+  // Don't continue if libMesh threw an exception
+  ASSERT_FALSE(libMeshException);
+  // Don't continue if we have null pointers
+  ASSERT_NE(meshPtr, nullptr);
+
+  DAGMC::const_element_iterator elBeg
+    = meshPtr->elements_begin();
+  DAGMC::const_element_iterator elNext = elBeg;
+  elNext++;
+
+  // To use shared_from_this functionality, obb MUST
+  // created as a shared ptr
+  std::shared_ptr<DAGMC::OrientedBoundingBox> obbptr =
+      std::make_shared<DAGMC::OrientedBoundingBox>(elBeg, elNext);
+
+  EXPECT_EQ(obbptr.use_count(), 1);
+
+  {
+    // Test cast
+    std::shared_ptr<DAGMC::TreeNode> node = obbptr->shared_from_this();
+    EXPECT_NE(node, nullptr);
+    EXPECT_EQ(node.use_count(), 2);
+    EXPECT_EQ(obbptr.use_count(), 2);
+  }
+
+  EXPECT_EQ(obbptr.use_count(), 1);
+
+  // Bad usage
+  DAGMC::OrientedBoundingBox obb(elBeg, elNext);
+  EXPECT_THROW(obb.shared_from_this(), std::bad_weak_ptr);
+
+}
+
 //---------------------------------------------------------------------------//
 
 TEST_F(OBBFileTest, Read) {
