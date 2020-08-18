@@ -2,13 +2,8 @@
 #define DAG_CONTAINER_HPP
 
 #include<set>
+#include "libmesh.hpp"
 
-// Libmesh headers
-#include "libmesh/libmesh.h"
-#include "libmesh/mesh.h"
-#include "libmesh/mesh_base.h"
-#include "libmesh/elem.h"
-#include "libmesh/node.h"
 
 // The point of these classes is to abstract away the data types of how we
 // actually refer a set of mesh elements, so that they can be iterated

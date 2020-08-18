@@ -4,10 +4,7 @@
 // C++ include files that we need
 #include <iostream>
 // Libmesh headers
-#include "libmesh/mesh.h"
-#include "libmesh/mesh_base.h"
-#include "libmesh/node.h"
-#include "libmesh/elem.h"
+#include "libmesh.hpp"
 
 namespace DAGMC {
 

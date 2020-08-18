@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <iostream>
-//#include "libmesh/libmesh.h"
 #include "box.hpp"
 
 // Box test suite

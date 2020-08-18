@@ -1,97 +1,16 @@
-#include <iostream>
-#include <memory>
-#include <gtest/gtest.h>
+#include "libmesh_test.hpp"
 #include "obb.hpp"
 
 //---------------------------------------------------------------------------//
 // TEST FIXTURES
 //---------------------------------------------------------------------------//
 
-class OBBTest : public ::testing::Test {
-
- protected:
-
-  OBBTest() : libMeshException(false) {
-    tol = 0.000000001;
-  };
-
-  virtual void SetUp() override {
-    initlibMesh();
-  };
-  virtual void TearDown() override {};
-
-  void initlibMesh() {
-    //Emulate dummy command line args since required by libmesh
-    int argc_dummy = 1;
-    char dummych[] = "dummy";
-    char* argv_dummy[] = { dummych };
-
-    // Initialize libMesh and handle any exceptions
-    libmesh_try {
-      // Initialize the library
-      initPtr = std::make_shared<libMesh::LibMeshInit>(argc_dummy, argv_dummy);
-      // Create the mesh
-      if (initPtr != nullptr) {
-        meshPtr = std::make_shared<libMesh::Mesh>(initPtr->comm());
-      }
-
-    }
-    libmesh_catch(libMesh::LogicError & e) {
-      libMeshException = true;
-      return;
-    }
-  }
-
-  bool checkBasis(const DAGMC::Matrix& basis, std::stringstream& errmsg) {
-
-    errmsg.str("");
-    if (basis.n_rows != 3) {
-      errmsg << "Basis failed row number test. N rows = ";
-      errmsg << basis.n_rows;
-      return false;
-    }
-    if (basis.n_cols != 3) {
-      errmsg << "Basis failed col number test. N cols = ";
-      errmsg << basis.n_cols;
-      return false;
-    }
-    for (unsigned int icol = 0; icol < basis.n_cols; icol++) {
-      // Check normalisation
-      const DAGMC::Vector& ivec = basis.col(icol);
-      double vnorm = arma::norm(ivec);
-      if (fabs(vnorm - 1.0) > tol) {
-        errmsg << "Basis failed normalisation test. Norm vec ";
-        errmsg << icol << " = " << vnorm;
-        return false;
-      }
-      for (unsigned int jcol = icol + 1; jcol < basis.n_cols; jcol++) {
-        //Check orthogonal
-        const DAGMC::Vector& jvec = basis.col(jcol);
-        double prod = arma::dot(ivec, jvec);
-        if (fabs(vnorm - 1.0) > tol) {
-          errmsg << "Basis failed orthogonality between test between vecs ";
-          errmsg << icol << "," << jcol;
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  // Data members required for tests
-  // Pointers to libMesh objects
-  std::shared_ptr<libMesh::LibMeshInit> initPtr;
-  std::shared_ptr<libMesh::Mesh> meshPtr;
-  // Tolerance for double comparisons
-  double tol;
-  // Save whether libMesh raised an exception
-  bool libMeshException;
-
-};
+// An external helper function
+bool checkBasis(const DAGMC::Matrix& basis, double tol, std::stringstream& errmsg);
 
 //---------------------------------------------------------------------------//
 
-class OBBTetTest : public OBBTest {
+class OBBTetTest : public libMeshSimpleTest {
  protected:
 
   OBBTetTest() {
@@ -100,74 +19,25 @@ class OBBTetTest : public OBBTest {
     nNodesPerFace = 3;
     pointsLM.resize(nNodes);
     conn.resize(nFaces);
+
+    // Designed such that mean vec is (0,0,0)
+    pointsLM.at(0) = libMesh::Point(-0.5, -sqrt(3.) / 6., -sqrt(6.) / 12.);
+    pointsLM.at(1) = libMesh::Point(0.0, sqrt(3.) / 3., -sqrt(6.) / 12.);
+    pointsLM.at(2) = libMesh::Point(0.5, -sqrt(3.) / 6., -sqrt(6.) / 12.);
+    pointsLM.at(3) = libMesh::Point(0.0,         0.0,  sqrt(6.) / 4.);
+
+    conn.at(0) = {0, 1, 2};
+    conn.at(1) = {1, 3, 0};
+    conn.at(2) = {2, 3, 1};
+    conn.at(3) = {0, 3, 2};
+
   };
-
-  // Initalize variables for each test
-  virtual void SetUp() override {
-    OBBTest::SetUp();
-    initMesh();
-  };
-
-  //Override
-  virtual void initMesh() {
-    // Need to generate a simple mesh.
-    // We'll use a tetrahedron
-    if (meshPtr != nullptr) {
-
-      // Clear any prior data
-      meshPtr->clear();
-
-      libmesh_try {
-        // Set dim
-        meshPtr->set_mesh_dimension(2);
-        meshPtr->set_spatial_dimension(3);
-
-        // Reserve space
-        meshPtr->reserve_elem(nFaces);
-        meshPtr->reserve_nodes(nNodes);
-
-        // Add points
-        // Designed such that mean vec is (0,0,0)
-        pointsLM.at(0) = libMesh::Point(-0.5, -sqrt(3.) / 6., -sqrt(6.) / 12.);
-        pointsLM.at(1) = libMesh::Point(0.0, sqrt(3.) / 3., -sqrt(6.) / 12.);
-        pointsLM.at(2) = libMesh::Point(0.5, -sqrt(3.) / 6., -sqrt(6.) / 12.);
-        pointsLM.at(3) = libMesh::Point(0.0,         0.0,  sqrt(6.) / 4.);
-        for (unsigned int iNode = 0; iNode < nNodes; iNode++) {
-          meshPtr->add_point(pointsLM.at(iNode), iNode);
-        }
-
-        // Add elems
-        conn.at(0) = {0, 1, 2};
-        conn.at(1) = {1, 3, 0};
-        conn.at(2) = {2, 3, 1};
-        conn.at(3) = {0, 3, 2};
-        for (unsigned int iElem = 0; iElem < nFaces; iElem++) {
-          libMesh::Elem* elemptr = meshPtr->add_elem(libMesh::Elem::build_with_id(libMesh::TRI3, iElem));
-          for (unsigned int iNode = 0; iNode < nNodesPerFace; iNode++) {
-            elemptr->set_node(iNode) = meshPtr->node_ptr(conn[iElem][iNode]);
-          }
-        }
-
-        meshPtr->prepare_for_use();
-      }
-      libmesh_catch(libMesh::LogicError & e) {
-        libMeshException = true;
-      }
-    }
-  };
-
-  std::vector<libMesh::Point> pointsLM;
-  std::vector< std::vector< unsigned int> > conn;
-  unsigned int nFaces;
-  unsigned int nNodes;
-  unsigned int nNodesPerFace;
-
 
 };
 
 //---------------------------------------------------------------------------//
 
-class OBBFileTest : public OBBTest {
+class OBBFileTest : public libMeshFileTest {
  protected:
 
   OBBFileTest() {
@@ -179,64 +49,50 @@ class OBBFileTest : public OBBTest {
     vals.push_back(7.2955549577);
   };
 
+  // Save some information about mesh to help check later if it loaded correctly
+  bool getSurfsAndElems() {
 
-  bool Read(std::string filename, bool getIDs = false) {
-    bool meshLoaded = false;
+    surfs2Elems.clear();
+    surfIDs.clear();
+
     libmesh_try {
-      // Read in the mesh data
-      if (meshPtr != nullptr) {
-        // Clear any prior data
-        meshPtr->clear();
-        meshPtr->read(filename);
-        meshLoaded = meshPtr->is_prepared();
-        if (meshLoaded && getIDs) {
-          meshLoaded = getSurfsAndElems();
+      // Fetch surface ids
+      std::set< libMesh::subdomain_id_type > surf_ids;
+      meshPtr->subdomain_ids(surf_ids);
+
+      // Loop over surfaces
+      for (auto isurf : surf_ids) {
+
+        // Get element ids
+        std::set< libMesh::dof_id_type > elems;
+        DAGMC::const_element_iterator elIt
+        = meshPtr->active_subdomain_elements_begin(isurf);
+        DAGMC::const_element_iterator elEnd
+        = meshPtr->active_subdomain_elements_end(isurf);
+        unsigned int nElems = 0;
+        for (; elIt != elEnd; ++elIt) {
+          const libMesh::Elem& elem = **elIt;
+          elems.insert(elem.id());
+          nElems++;
         }
+        // Check all ids unique
+        if (nElems != elems.size())
+          return false;
+
+        // Save elems
+        surfs2Elems[isurf] = elems;
+        surfIDs.push_back(isurf);
       }
+
+      if (surfs2Elems.size() != surf_ids.size())
+        return false;
+      else
+        return true;
     }
     libmesh_catch(libMesh::LogicError & e) {
       libMeshException = true;
       return false;
     }
-    return meshLoaded;
-  }
-
-  // Save some information about mesh to help check later if it loaded correctly
-  bool getSurfsAndElems() {
-    surfs2Elems.clear();
-    surfIDs.clear();
-
-    // Fetch surface ids
-    std::set< libMesh::subdomain_id_type > surf_ids;
-    meshPtr->subdomain_ids(surf_ids);
-
-    // Loop over surfaces
-    for (auto isurf : surf_ids) {
-
-      // Get element ids
-      std::set< libMesh::dof_id_type > elems;
-      DAGMC::const_element_iterator elIt
-        = meshPtr->active_subdomain_elements_begin(isurf);
-      DAGMC::const_element_iterator elEnd
-        = meshPtr->active_subdomain_elements_end(isurf);
-      unsigned int nElems = 0;
-      for (; elIt != elEnd; ++elIt) {
-        const libMesh::Elem& elem = **elIt;
-        elems.insert(elem.id());
-        nElems++;
-      }
-      // Check all ids unique
-      if (nElems != elems.size())
-        return false;
-
-      // Save elems
-      surfs2Elems[isurf] = elems;
-      surfIDs.push_back(isurf);
-    }
-    if (surfs2Elems.size() != surf_ids.size())
-      return false;
-    else
-      return true;
   }
 
   // These methods are only used to check mesh was correctly loaded.
@@ -277,20 +133,7 @@ class OBBFileTest : public OBBTest {
 // FIXTURE BASED TESTS
 //---------------------------------------------------------------------------//
 
-TEST_F(OBBTest, SetUp) {
-
-  // Don't continue if libMesh threw an exception
-  ASSERT_FALSE(libMeshException);
-
-  EXPECT_NE(initPtr, nullptr);
-  EXPECT_NE(meshPtr, nullptr);
-
-}
-
-//---------------------------------------------------------------------------//
-
 TEST_F(OBBTetTest, SetUp) {
-
   ASSERT_FALSE(libMeshException);
   ASSERT_NE(meshPtr, nullptr);
   EXPECT_TRUE(meshPtr->is_prepared());
@@ -358,7 +201,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   basis.reset();
   ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisFromCov(covMat, basis));
   std::stringstream errmsg;
-  bool orthonormal = checkBasis(basis, errmsg);
+  bool orthonormal = checkBasis(basis, tol, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
   points.reset();
@@ -397,7 +240,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   // Get basis
   ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisFromCov(covMat, basis));
   errmsg.str("");
-  orthonormal = checkBasis(basis, errmsg);
+  orthonormal = checkBasis(basis, tol, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
   // Compute basis directly through discrete method
@@ -405,7 +248,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   basis.reset();
   errmsg.str("");
   ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisDiscrete(elems, basis, points));
-  orthonormal = checkBasis(basis, errmsg);
+  orthonormal = checkBasis(basis, tol, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
   // Compute basis directly through discrete method
@@ -413,7 +256,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   basis.reset();
   errmsg.str("");
   ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisCont(elems, basis, points));
-  orthonormal = checkBasis(basis, errmsg);
+  orthonormal = checkBasis(basis, tol, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
   // Compute basis for a single face
@@ -425,7 +268,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisDiscrete(elems, basis, points));
   ASSERT_EQ(points.n_cols, nNodesPerFace);
   ASSERT_EQ(points.n_rows, 3);
-  orthonormal = checkBasis(basis, errmsg);
+  orthonormal = checkBasis(basis, tol, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
   points.reset();
@@ -434,7 +277,7 @@ TEST_F(OBBTetTest, OBBUtilsTet) {
   ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisCont(elems, basis, points));
   ASSERT_EQ(points.n_cols, nNodesPerFace);
   ASSERT_EQ(points.n_rows, 3);
-  orthonormal = checkBasis(basis, errmsg);
+  orthonormal = checkBasis(basis, tol, errmsg);
   EXPECT_TRUE(orthonormal) << errmsg.str();
 
 }
@@ -519,7 +362,8 @@ TEST_F(OBBFileTest, Read) {
 
   for (unsigned int i = 0; i < files.size(); i++) {
     //Attempt to read file
-    EXPECT_TRUE(Read(files.at(i), true));
+    EXPECT_TRUE(Read(files.at(i)));
+    EXPECT_TRUE(getSurfsAndElems());
     EXPECT_FALSE(libMeshException);
 
     // Move onto next file if we failed to read this one
@@ -590,7 +434,7 @@ TEST_F(OBBFileTest, OBBUtils) {
 
     ASSERT_NO_THROW(DAGMC::OBBUtils::constructBasisFromCov(covMat, basis)) << err.str();
     std::stringstream msg;
-    bool orthonormal = checkBasis(basis, msg);
+    bool orthonormal = checkBasis(basis, tol, msg);
     EXPECT_TRUE(orthonormal) << err.str() << msg.str();
 
     // Find element statistics
@@ -694,6 +538,42 @@ TEST_F(OBBFileTest, OBBconstructor) {
     }
 
   }
-
-
 }
+
+//---------------------------------------------------------------------------//
+
+bool checkBasis(const DAGMC::Matrix& basis, double tol, std::stringstream& errmsg) {
+
+  errmsg.str("");
+  if (basis.n_rows != 3) {
+    errmsg << "Basis failed row number test. N rows = ";
+    errmsg << basis.n_rows;
+    return false;
+  }
+  if (basis.n_cols != 3) {
+    errmsg << "Basis failed col number test. N cols = ";
+    errmsg << basis.n_cols;
+    return false;
+  }
+  for (unsigned int icol = 0; icol < basis.n_cols; icol++) {
+    // Check normalisation
+    const DAGMC::Vector& ivec = basis.col(icol);
+    double vnorm = arma::norm(ivec);
+    if (fabs(vnorm - 1.0) > tol) {
+      errmsg << "Basis failed normalisation test. Norm vec ";
+      errmsg << icol << " = " << vnorm;
+      return false;
+    }
+    for (unsigned int jcol = icol + 1; jcol < basis.n_cols; jcol++) {
+      //Check orthogonal
+      const DAGMC::Vector& jvec = basis.col(jcol);
+      double prod = arma::dot(ivec, jvec);
+      if (fabs(vnorm - 1.0) > tol) {
+        errmsg << "Basis failed orthogonality between test between vecs ";
+        errmsg << icol << "," << jcol;
+        return false;
+      }
+    }
+  }
+  return true;
+};

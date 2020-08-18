@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include "libmesh_test.hpp"
 #include "container.hpp"
 
 // Super-lightweight test for the container class.
@@ -7,54 +7,18 @@
 // TEST FIXTURES
 //---------------------------------------------------------------------------//
 
-class ContainerTest : public ::testing::Test {
+class ContainerTest : public libMeshFileTest {
 
  protected:
 
-  ContainerTest() : libMeshException(false),
-    meshLoaded(false),
-    filename("cube.e") {};
+  ContainerTest() : meshIsLoaded(false), filename("cube.e") {};
 
   virtual void SetUp() override {
-    initlibMesh();
+    libMeshFileTest::SetUp();
+    meshIsLoaded = Read(filename);
   };
-  virtual void TearDown() override {};
 
-  void initlibMesh() {
-    //Emulate dummy command line args since required by libmesh
-    int argc_dummy = 1;
-    char dummych[] = "dummy";
-    char* argv_dummy[] = { dummych };
-
-    // Initialize libMesh and handle any exceptions
-    libmesh_try {
-      // Initialize the library
-      initPtr = std::make_shared<libMesh::LibMeshInit>(argc_dummy, argv_dummy);
-      // Create the mesh
-      if (initPtr != nullptr) {
-        meshPtr = std::make_shared<libMesh::Mesh>(initPtr->comm());
-      }
-      // Read in the mesh data
-      if (meshPtr != nullptr) {
-        // Clear any prior data
-        meshPtr->clear();
-        meshPtr->read(filename);
-        meshLoaded = meshPtr->is_prepared();
-      }
-    }
-    libmesh_catch(libMesh::LogicError & e) {
-      libMeshException = true;
-      return;
-    }
-  }
-
-  // Data members required for tests
-  // Pointers to libMesh objects
-  std::shared_ptr<libMesh::LibMeshInit> initPtr;
-  std::shared_ptr<libMesh::Mesh> meshPtr;
-  // Save whether libMesh raised an exception
-  bool libMeshException;
-  bool meshLoaded;
+  bool meshIsLoaded;
   std::string filename;
   std::shared_ptr<DAGMC::ElemContainer> dagElems;
 
@@ -70,7 +34,7 @@ TEST_F(ContainerTest, Constructor) {
   ASSERT_FALSE(libMeshException);
   ASSERT_NE(initPtr, nullptr);
   ASSERT_NE(meshPtr, nullptr);
-  ASSERT_TRUE(meshLoaded);
+  ASSERT_TRUE(meshIsLoaded);
 
   // Get element iterators
   DAGMC::const_element_iterator elBeg

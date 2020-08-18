@@ -1,63 +1,29 @@
-#include <gtest/gtest.h>
-#include <iostream>
-#include "libmesh/libmesh.h"
+#include "libmesh_test.hpp"
 #include "GeomTopoTool.hpp"
 
 //---------------------------------------------------------------------------//
 // TEST FIXTURES
 //---------------------------------------------------------------------------//
 
-class GeomTopoToolLMTest : public ::testing::Test {
+class GeomTopoToolLMTest : public libMeshFileTest {
  protected:
 
-  GeomTopoToolLMTest() : meshLoaded(false),
-    libMeshException(false) {};
+  GeomTopoToolLMTest() :
+    meshIsLoaded(false),
+    filename("sphere.e")
+  {};
 
   // Initalize variables for each test
-  virtual void SetUp() {
-
-    //Emulate dummy command line args since required by libmesh
-    int argc_dummy = 1;
-    char dummych[] = "dummy";
-    char* argv_dummy[] = { dummych };
-
-    // Initialize libMesh and handle any exceptions
-    libmesh_try {
-      // Initialize the library
-      initPtr = std::make_shared<libMesh::LibMeshInit>(argc_dummy, argv_dummy);
-      // Create the mesh
-      if (initPtr != nullptr) {
-        meshPtr = std::make_shared<libMesh::Mesh>(initPtr->comm());
-      }
-
-      // Set the input file
-      std::string infile = "sphere.e";
-
-      // Read in the mesh data
-      if (meshPtr != nullptr) {
-        meshPtr->read(infile);
-        meshLoaded = meshPtr->is_prepared();
-      }
-    }
-    libmesh_catch(libMesh::LogicError & e) {
-      libMeshException = true;
-      return;
-    }
-
-    // Create the geomtopotool
+  virtual void SetUp() override {
+    libMeshFileTest::SetUp();
+    meshIsLoaded = Read(filename);
     gTTPtr = std::make_shared<DAGMC::GeomTopoToolLM>(meshPtr);
-
-  }
-
-  // Nothing to do
-  virtual void TearDown() {}
+  };
 
   // Data members required for tests
-  std::shared_ptr<libMesh::LibMeshInit> initPtr;
-  std::shared_ptr<libMesh::Mesh> meshPtr;
+  bool meshIsLoaded;
+  std::string filename;
   std::shared_ptr<DAGMC::GeomTopoTool> gTTPtr;
-  bool meshLoaded;
-  bool libMeshException;
 
 };
 
@@ -74,7 +40,7 @@ TEST_F(GeomTopoToolLMTest, SetUp) {
   EXPECT_NE(initPtr, nullptr);
   EXPECT_NE(meshPtr, nullptr);
   EXPECT_NE(gTTPtr, nullptr);
-  EXPECT_TRUE(meshLoaded);
+  EXPECT_TRUE(meshIsLoaded);
 
 }
 
@@ -87,7 +53,7 @@ TEST_F(GeomTopoToolLMTest, setupGeometry) {
   // Don't continue if we have null pointers
   ASSERT_NE(meshPtr, nullptr);
   ASSERT_NE(gTTPtr, nullptr);
-  ASSERT_TRUE(meshLoaded);
+  ASSERT_TRUE(meshIsLoaded);
 
   // Check we don't fail setup
   ASSERT_TRUE(gTTPtr->setupGeometry());
