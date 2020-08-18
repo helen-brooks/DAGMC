@@ -7,15 +7,15 @@ namespace DAGMC {
 // OrientedBoundingBox class methods
 //---------------------------------------------------------------------------//
 
-bool OrientedBoundingBox::containsElem(libMesh::dof_id_type id) {
+bool OrientedBoundingBox::containsElem(libMesh::dof_id_type id) const {
 
-  // Send iterator back to start
-  elemsPtr->reset();
+  // Fetch a local iterator
+  std::shared_ptr<ElemIterator> it = elemsPtr->getIterator();
 
   bool found = false;
   // Loop over elements
   const libMesh::Elem* elemptr;
-  while (elemsPtr->getNext(elemptr)) {
+  while (it->getNext(elemptr)) {
     if (elemptr->id() == id) {
       found = true;
       break;
@@ -31,7 +31,7 @@ void  OrientedBoundingBox::construct_obb() {
   if (elemsPtr == nullptr)
     return;
   //Fetch a reference to container
-  ElemContainer& elems = *elemsPtr;
+  const ElemContainer& elems = *elemsPtr;
 
   // Find basis vectors for the box
   Matrix basis;
@@ -48,7 +48,7 @@ void  OrientedBoundingBox::construct_obb() {
 
 }
 
-void OrientedBoundingBox::constructBasis(ElemContainer& elems,
+void OrientedBoundingBox::constructBasis(const ElemContainer& elems,
                                          Matrix& basis,
                                          Matrix& points) {
 
@@ -110,7 +110,7 @@ std::shared_ptr<TreeNode> OrientedBoundingBox::getChild(std::shared_ptr<ElemCont
 
 }
 
-void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContainer> >& partitions) {
+void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContainer> >& partitions) const {
 
   // Sort basis by box side length
   std::vector<unsigned int> order;
@@ -119,6 +119,9 @@ void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContaine
   // No non-degnerate dirs, or something went wrong
   if (order.empty())
     return;
+
+  // Fetch a local iterator
+  std::shared_ptr<ElemIterator> it = elemsPtr->getIterator();
 
   // Attempt to subdivide perpendicular to sides of decreasing length
   for (auto& ivec : order) {
@@ -136,10 +139,11 @@ void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContaine
     std::set<const libMesh::Elem*> elemsMinus;
 
     // Send iterator back to start
-    elemsPtr->reset();
+    it->reset();
+
     // Loop over elements
     const libMesh::Elem* elemptr;
-    while (elemsPtr->getNext(elemptr)) {
+    while (it->getNext(elemptr)) {
       //Get element midpoint
       Vector midpoint = getElemMidpoint(elemptr);
 
@@ -175,7 +179,7 @@ void OrientedBoundingBox::getPartitions(std::vector<std::shared_ptr<ElemContaine
   }
 }
 
-Vector OrientedBoundingBox::getElemMidpoint(const libMesh::Elem* elemPtr) {
+Vector OrientedBoundingBox::getElemMidpoint(const libMesh::Elem* elemPtr) const {
 
   Vector midpoint;
   Matrix points;
@@ -193,7 +197,7 @@ Vector OrientedBoundingBox::getElemMidpoint(const libMesh::Elem* elemPtr) {
 // OBBUtils namespace methods
 //---------------------------------------------------------------------------//
 
-void OBBUtils::constructBasisCont(ElemContainer& elems,
+void OBBUtils::constructBasisCont(const ElemContainer& elems,
                                   Matrix& basis,
                                   Matrix& points,
                                   Vector& mean) {
@@ -211,7 +215,7 @@ void OBBUtils::constructBasisCont(ElemContainer& elems,
 
 }
 
-void OBBUtils::constructBasisCont(ElemContainer& elems,
+void OBBUtils::constructBasisCont(const ElemContainer& elems,
                                   Matrix& basis,
                                   Matrix& points) {
   Vector dummy;
@@ -220,7 +224,7 @@ void OBBUtils::constructBasisCont(ElemContainer& elems,
 
 
 // Construct basis using the covariance of the nodes of elements
-void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
+void OBBUtils::constructBasisDiscrete(const ElemContainer& elems,
                                       Matrix& basis,
                                       Matrix& points,
                                       Vector& mean) {
@@ -237,7 +241,7 @@ void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
 
 }
 
-void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
+void OBBUtils::constructBasisDiscrete(const ElemContainer& elems,
                                       Matrix& basis,
                                       Matrix& points) {
   Vector dummy;
@@ -245,10 +249,12 @@ void OBBUtils::constructBasisDiscrete(ElemContainer& elems,
 }
 
 // Construct a matrix of points from the nodes of a set of elements
-void OBBUtils::getPointsMatrix(ElemContainer& elems,
+void OBBUtils::getPointsMatrix(const ElemContainer& elems,
                                Matrix& points,
                                Vector& mean) {
-  elems.reset();
+
+  // Fetch a local iterator
+  std::shared_ptr<ElemIterator> it = elems.getIterator();
   points.reset();
   mean.zeros(DIM);
 
@@ -257,7 +263,7 @@ void OBBUtils::getPointsMatrix(ElemContainer& elems,
     // Loop over elements
     const libMesh::Elem* elemPtr;
     unsigned int nElems = 0;
-    while (elems.getNext(elemPtr)) {
+    while (it->getNext(elemPtr)) {
       nElems++;
 
       // Insert points
@@ -276,7 +282,7 @@ void OBBUtils::getPointsMatrix(ElemContainer& elems,
     points.reset();
   }
 }
-void OBBUtils::getPointsMatrix(ElemContainer& elems,
+void OBBUtils::getPointsMatrix(const ElemContainer& elems,
                                Matrix& points) {
   Vector dummy;
   getPointsMatrix(elems, points, dummy);
@@ -308,11 +314,12 @@ void OBBUtils::getSingleElemPoints(const libMesh::Elem* elemPtr,
   elemMean *= 1.0 / double(nNodes);
 }
 
-void OBBUtils::getElemStats(ElemContainer& elems,
+void OBBUtils::getElemStats(const ElemContainer& elems,
                             std::vector<double>& areas,
                             Vector& mean,
                             Matrix& points) {
-  elems.reset();
+  // Fetch a local iterator
+  std::shared_ptr<ElemIterator> it = elems.getIterator();
   points.reset();
   areas.clear();
   mean.zeros(DIM);
@@ -321,7 +328,7 @@ void OBBUtils::getElemStats(ElemContainer& elems,
 
     // Loop over elements
     const libMesh::Elem* elemPtr;
-    while (elems.getNext(elemPtr)) {
+    while (it->getNext(elemPtr)) {
 
       // Fetch data for this element, and append points
       double area;

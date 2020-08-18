@@ -12,8 +12,6 @@ const unsigned int DIM = 3;
 
 enum ConstructMethod { CONT = 0, DISCRETE, ALIGNED };
 
-typedef libMesh::MeshBase::const_element_iterator const_element_iterator;
-
 // Class to construct a box containing a set of libMesh elements
 // Default is oriented, but can build aligned box
 class OrientedBoundingBox : public TreeNode {
@@ -25,7 +23,7 @@ class OrientedBoundingBox : public TreeNode {
                       std::shared_ptr<TreeNode> parentIn = nullptr) :
     method(methodIn),
     TreeNode(parentIn) {
-    elemsPtr = std::make_shared<DAGMC::ElemConstItContainer>(elemBegin, elemEnd);
+    elemsPtr = std::make_shared<ElemConstItContainer>(elemBegin, elemEnd);
     construct_obb();
   }
 
@@ -39,27 +37,27 @@ class OrientedBoundingBox : public TreeNode {
   };
 
 
-  bool isConstructed() { return (box != nullptr); }
-  bool isSane() { return (box == nullptr) ? false : box->isSane(); };
-  int  status() { return (box == nullptr) ? Box::failunknown : box->getBoxStatus(); };
+  bool isConstructed() const { return (box != nullptr); }
+  bool isSane() const { return (box == nullptr) ? false : box->isSane(); };
+  int  status() const { return (box == nullptr) ? Box::failunknown : box->getBoxStatus(); };
 
   // Return a const reference to box
-  const Box& getBox() { return *box; };
+  const Box& getBox() const { return *box; };
 
   // Geom queries
-  bool containsPoint(const Vector& point) {
+  bool containsPoint(const Vector& point) const {
     return (box == nullptr) ? false : box->containsPoint(point);
   };
   // Overloaded version. Can also be used for libMesh::Node
   // since that inherits from libMesh::Point
-  bool containsPoint(const libMesh::Point& pointLM) {
+  bool containsPoint(const libMesh::Point& pointLM) const {
     Vector pointVec = { pointLM(0), pointLM(1), pointLM(2) };
     return containsPoint(pointVec);
   };
 
   // Not a geometric query - might be that an element could fit inside box
-  // but checks if this elem lives inside elemcontainer
-  bool containsElem(libMesh::dof_id_type id);
+  // - but instead checks if this elem lives inside elemcontainer
+  bool containsElem(libMesh::dof_id_type id) const;
 
 
  private:
@@ -67,7 +65,7 @@ class OrientedBoundingBox : public TreeNode {
   void construct_obb();
 
   // Construct basis for the OBB and internally set mean vector
-  void constructBasis(ElemContainer& elems, Matrix& basis, Matrix& points);
+  void constructBasis(const ElemContainer& elems, Matrix& basis, Matrix& points);
 
   // Partition elements if possible and create new child OBBs
   bool setChildren() override;
@@ -78,9 +76,9 @@ class OrientedBoundingBox : public TreeNode {
   // Implmement subdivision algorithm from "OBBTree:
   // A Hierarchical Structure for Rapid Interference Detection",
   // Gottschalk, Lin, and Manocha, section 4
-  void getPartitions(std::vector<std::shared_ptr<ElemContainer> >& partitions);
+  void getPartitions(std::vector<std::shared_ptr<ElemContainer> >& partitions) const;
 
-  Vector getElemMidpoint(const libMesh::Elem* elemPtr);
+  Vector getElemMidpoint(const libMesh::Elem* elemPtr) const;
 
   // Method for constructing box
   const ConstructMethod method;
@@ -117,9 +115,9 @@ namespace OBBUtils {
 // A Hierarchical Structure for Rapid Interference Detection",
 // Gottschalk, Lin, and Manocha
 // section 4
-void constructBasisDiscrete(ElemContainer& elems,
+void constructBasisDiscrete(const ElemContainer& elems,
                             Matrix& basis, Matrix& points, Vector& mean);
-void constructBasisDiscrete(ElemContainer& elems,
+void constructBasisDiscrete(const ElemContainer& elems,
                             Matrix& basis, Matrix& points);
 
 // Construct basis using the covariance with a continuous average
@@ -128,14 +126,14 @@ void constructBasisDiscrete(ElemContainer& elems,
 // A Hierarchical Structure for Rapid Interference Detection",
 // Gottschalk, Lin, and Manocha
 // section 4
-void constructBasisCont(ElemContainer& elems,
+void constructBasisCont(const ElemContainer& elems,
                         Matrix& basis, Matrix& points, Vector& mean);
-void constructBasisCont(ElemContainer& elems,
+void constructBasisCont(const ElemContainer& elems,
                         Matrix& basis, Matrix& points);
 
 // Construct a matrix of points (optionally fetch mean)
-void getPointsMatrix(ElemContainer& elems, Matrix& points, Vector& mean);
-void getPointsMatrix(ElemContainer& elems, Matrix& points);
+void getPointsMatrix(const ElemContainer& elems, Matrix& points, Vector& mean);
+void getPointsMatrix(const ElemContainer& elems, Matrix& points);
 
 //  Insert points for a single element and calc mean point
 void getSingleElemPoints(const libMesh::Elem* elemPtr,
@@ -144,7 +142,7 @@ void getSingleElemPoints(const libMesh::Elem* elemPtr,
 
 // Compute all statistics needed to calculate covariance from a
 // set of elems. Assumes tris.
-void getElemStats(ElemContainer& elems,
+void getElemStats(const ElemContainer& elems,
                   std::vector<double>& areas, Vector& mean,
                   Matrix& points);
 

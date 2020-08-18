@@ -97,8 +97,11 @@ TEST_F(ContainerTest, Constructor) {
   dagElems =
       std::make_shared<DAGMC::ElemConstItContainer>(elBeg, elEnd);
 
-  EXPECT_EQ(dagElems->first(), &** elBeg);
-  EXPECT_EQ(dagElems->last(), &** elEnd);
+  // Get an iterator
+  std::shared_ptr<DAGMC::ElemIterator> it = dagElems->getIterator();
+
+  EXPECT_EQ(it->first(), &** elBeg);
+  EXPECT_EQ(it->last(), &** elEnd);
 
   //Two attempts to check reset call works
   unsigned int attempts = 0;
@@ -110,7 +113,7 @@ TEST_F(ContainerTest, Constructor) {
 
     const libMesh::Elem* elemPtr;
     unsigned int count = 0;
-    while (dagElems->getNext(elemPtr)) {
+    while (it->getNext(elemPtr)) {
       ASSERT_LT(count, nElems) << err.str();
       // Expect to hit the same elements in same order
       EXPECT_EQ(elemPtr, elemptrsOrd.at(count)) << err.str();
@@ -118,16 +121,19 @@ TEST_F(ContainerTest, Constructor) {
     }
     EXPECT_EQ(count, nElems) << err.str();
 
-    dagElems->reset();
+    it->reset();
 
   } while (attempts < 2);
 
   // Second constructor call
   dagElems =
-      std::make_shared<DAGMC::ElemConstPtrContainer>(elemptrs);
+      std::make_shared<DAGMC::ElemConstPtrContainer>(elemptrs)
+      ;
+  // Get an iterator
+  it = dagElems->getIterator();
 
-  EXPECT_EQ(dagElems->first(), *elemptrs.begin());
-  EXPECT_EQ(dagElems->last(), *elemptrs.end());
+  EXPECT_EQ(it->first(), *elemptrs.begin());
+  EXPECT_EQ(it->last(), *elemptrs.end());
 
   //Two attempts to check reset call works
   attempts = 0;
@@ -138,14 +144,14 @@ TEST_F(ContainerTest, Constructor) {
 
     const libMesh::Elem* elemPtr;
     auto itCheck = elemptrs.begin();
-    while (dagElems->getNext(elemPtr)) {
+    while (it->getNext(elemPtr)) {
       ASSERT_NE(itCheck, elemptrs.end());
       EXPECT_EQ(elemPtr, *itCheck);
       itCheck++;
     }
 
     //check reset call works
-    dagElems->reset();
+    it->reset();
 
   } while (attempts < 2);
 
