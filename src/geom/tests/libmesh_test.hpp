@@ -26,6 +26,9 @@ class libMeshTest : public ::testing::Test {
     char dummych[] = "dummy";
     char* argv_dummy[] = { dummych };
 
+    // Reset pointer
+    meshPtr.reset();
+
     // Initialize libMesh and handle any exceptions
     libmesh_try {
       // Initialize the library

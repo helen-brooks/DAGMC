@@ -15,8 +15,9 @@ typedef libMesh::MeshBase::const_element_iterator const_element_iterator;
 
 // An  abstract external iterator for a Container object.
 // Intended for local use only
-// In principle have multiple iterators pointing
+// In principle can have multiple iterators pointing
 // at same container
+// Base class gives nullptr as results
 template < class T >
 class LocalIterator {
 
@@ -29,14 +30,14 @@ class LocalIterator {
     it_is_void = true;
   }
 
-  // Fetch pointers to first and last in list
-  virtual T* first() = 0;
-  virtual T* last() = 0;
-
   // Set input pointer to next in list, incrementing internal iterator
-  virtual bool getNext(T*& refptr) = 0;
+  virtual bool getNext(T*& refptr) {
+    refptr = nullptr;
+    return false;
+  };
 
  protected:
+
   bool it_is_void;
 };
 
@@ -56,9 +57,6 @@ class ElemLMIterator : public ElemIterator {
 
   ~ElemLMIterator() {};
 
-  const libMesh::Elem* first() override { return &** elBeginLocal; };
-  const libMesh::Elem* last() override { return &** elEndLocal; };
-
   bool getNext(const libMesh::Elem*& next) override {
     if (it_is_void) {
       elIt = elBeginLocal;
@@ -73,6 +71,7 @@ class ElemLMIterator : public ElemIterator {
   };
 
  private:
+
   // Copies of the beginning and end
   const_element_iterator elBeginLocal;
   const_element_iterator elEndLocal;
@@ -92,9 +91,6 @@ class ElemSetIterator : public ElemIterator {
                   const_set_iterator elEnd) :
     elBegLocal(elBegin),
     elEndLocal(elEnd) {};
-
-  const libMesh::Elem* first() override { return *elBegLocal; };
-  const libMesh::Elem* last() override { return *elEndLocal; };
 
   bool getNext(const libMesh::Elem*& next) override {
     if (it_is_void) {
@@ -131,8 +127,7 @@ class Container {
   // -> clever pointer will deallocate memory once it goes out of scope
   virtual std::shared_ptr<LocalIterator<T> > getIterator() const = 0;
 
-  // // Set input pointer to next in list, incrementing internal iterator
-  // virtual bool getNext(T*& refptr) = 0;
+  virtual bool isValid() const { return true; }
 
 };
 
@@ -146,21 +141,48 @@ class ElemConstItContainer : public ElemContainer {
   ElemConstItContainer(const_element_iterator elemBegin,
                        const_element_iterator elemEnd) :
     elBegin(elemBegin),
-    elEnd(elemEnd)
-  {};
+    elEnd(elemEnd) {
+    valid = checkIfValid();
+  };
 
   ~ElemConstItContainer() {};
 
+  // Return a pointer to an iterator. Nullptr if container not valid
   std::shared_ptr<ElemIterator> getIterator() const override {
+    if (!valid)
+      return std::make_shared<ElemIterator>();
+
     std::shared_ptr<ElemIterator> it
       = std::make_shared<ElemLMIterator>(elBegin, elEnd);
     return it;
   };
 
+  bool isValid() const override { return valid;}
+
  private:
 
-  const_element_iterator elBegin;
-  const_element_iterator elEnd;
+  typedef
+  variant_filter_iterator<libMesh::MeshBase::Predicate,
+                          libMesh::Elem* const,
+                          libMesh::Elem* const&,
+                          libMesh::Elem* const*>::IterBase IterBase;
+
+  typedef
+  variant_filter_iterator<libMesh::MeshBase::Predicate,
+                          libMesh::Elem* const,
+                          libMesh::Elem* const&,
+                          libMesh::Elem* const*>::PredBase PredBase;
+
+
+  // Check if the iterators passed make for a valid set
+  bool checkIfValid() const;
+
+  // Contant iterators to contant elements
+  const const_element_iterator elBegin;
+  const const_element_iterator elEnd;
+
+  // Save if the container is valid
+  bool valid;
 
 };
 
