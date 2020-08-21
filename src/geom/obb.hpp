@@ -59,6 +59,13 @@ class OrientedBoundingBox : public TreeNode {
   // - but instead checks if this elem lives inside elemcontainer
   bool containsElem(libMesh::dof_id_type id) const;
 
+  // Get a local iterator for the container
+  std::shared_ptr<ElemIterator> getIterator() const {
+    if (elemsPtr == nullptr)
+      return nullptr;
+    else
+      return elemsPtr->getIterator();
+  }
 
  private:
   // Construct an OBB for an element set
