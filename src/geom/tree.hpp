@@ -20,6 +20,9 @@ class TreeNode : public  std::enable_shared_from_this<TreeNode> {
   bool isRoot() {return (parent == nullptr);}
   bool isLeaf() {return (children.empty());}
 
+  // Return information on success of construction
+  virtual bool isConstructed() const = 0;
+
   // Return a copy of the children of this node
   std::vector<std::shared_ptr<TreeNode> > getChildren() {
     return children;

@@ -9,6 +9,7 @@ class SimpleOBBTreeTest : public libMeshSimpleTest {
  protected:
 
   SimpleOBBTreeTest() {
+    // Square of two tris
     nFaces = 2;
     nNodes = 4;
     nNodesPerFace = 3;
@@ -106,5 +107,120 @@ TEST_F(SimpleOBBTreeTest, Constructor) {
     EXPECT_EQ(elemBoxCount[iElem], 1);
   }
 
+}
 
+
+// Test an empty tree: repeated iterator
+TEST_F(SimpleOBBTreeTest, DummyRepeated) {
+
+  // Don't continue if libMesh threw an exception
+  ASSERT_FALSE(libMeshException);
+  // Don't continue if we have null pointers
+  ASSERT_NE(meshPtr, nullptr);
+  ASSERT_TRUE(meshPtr->is_prepared());
+
+  DAGMC::const_element_iterator elBeg
+    = meshPtr->elements_begin();
+
+  // Build a tree and fetch root
+  DAGMC::OBBTree tree(elBeg, elBeg);
+  std::shared_ptr<DAGMC::TreeNode> root = tree.getRoot();
+  ASSERT_NE(root, nullptr);
+
+  // Technically valid, just empty
+  EXPECT_FALSE(root->isConstructed());
+
+}
+
+// Test an empty tree: inverted iterator
+TEST_F(SimpleOBBTreeTest, DummyReversed) {
+
+  // Don't continue if libMesh threw an exception
+  ASSERT_FALSE(libMeshException);
+  // Don't continue if we have null pointers
+  ASSERT_NE(meshPtr, nullptr);
+  ASSERT_TRUE(meshPtr->is_prepared());
+
+  DAGMC::const_element_iterator elBeg
+    = meshPtr->elements_begin();
+  DAGMC::const_element_iterator elEnd
+    = meshPtr->elements_end();
+
+  // Build a tree and fetch root
+  DAGMC::OBBTree tree(elEnd, elBeg);
+  std::shared_ptr<DAGMC::TreeNode> root = tree.getRoot();
+  ASSERT_NE(root, nullptr);
+
+  EXPECT_FALSE(root->isConstructed());
+
+}
+
+// Test an empty tree: unordered iterators
+TEST_F(SimpleOBBTreeTest, DummyUnordered) {
+
+  // Don't continue if libMesh threw an exception
+  ASSERT_FALSE(libMeshException);
+  // Don't continue if we have null pointers
+  ASSERT_NE(meshPtr, nullptr);
+  ASSERT_TRUE(meshPtr->is_prepared());
+
+  DAGMC::const_element_iterator elBeg
+    = meshPtr->elements_begin();
+  DAGMC::const_element_iterator elIt = elBeg;
+  elIt++;
+
+  // Build a tree and fetch root
+  DAGMC::OBBTree tree(elIt, elBeg);
+  std::shared_ptr<DAGMC::TreeNode> root = tree.getRoot();
+  ASSERT_NE(root, nullptr);
+
+  EXPECT_FALSE(root->isConstructed());
+
+}
+
+// Test an empty tree: unmatched type of iterators
+TEST_F(SimpleOBBTreeTest, DummyUnmatched) {
+
+  // Don't continue if libMesh threw an exception
+  ASSERT_FALSE(libMeshException);
+  // Don't continue if we have null pointers
+  ASSERT_NE(meshPtr, nullptr);
+  ASSERT_TRUE(meshPtr->is_prepared());
+
+  DAGMC::const_element_iterator elBeg
+    = meshPtr->elements_begin();
+  DAGMC::const_element_iterator elEnd
+    = meshPtr->active_elements_end();
+
+  // Build a tree and fetch root
+  DAGMC::OBBTree tree(elBeg, elEnd);
+  std::shared_ptr<DAGMC::TreeNode> root = tree.getRoot();
+  ASSERT_NE(root, nullptr);
+
+  EXPECT_FALSE(root->isConstructed());
+}
+
+
+// Test a single node tree
+TEST_F(SimpleOBBTreeTest, Leaf) {
+
+  // Don't continue if libMesh threw an exception
+  ASSERT_FALSE(libMeshException);
+  // Don't continue if we have null pointers
+  ASSERT_NE(meshPtr, nullptr);
+  ASSERT_TRUE(meshPtr->is_prepared());
+
+  DAGMC::const_element_iterator elBeg
+    = meshPtr->elements_begin();
+  DAGMC::const_element_iterator elIt = elBeg;
+  elIt++;
+
+  // Build a tree and fetch root
+  DAGMC::OBBTree tree(elBeg, elIt);
+  std::shared_ptr<DAGMC::TreeNode> root = tree.getRoot();
+  ASSERT_NE(root, nullptr);
+
+  EXPECT_TRUE(root->isConstructed());
+  EXPECT_TRUE(root->isRoot());
+  EXPECT_TRUE(root->isLeaf());
 }

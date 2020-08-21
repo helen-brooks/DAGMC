@@ -36,8 +36,8 @@ class OrientedBoundingBox : public TreeNode {
     construct_obb();
   };
 
-
-  bool isConstructed() const { return (box != nullptr); }
+  // Return information on success of construction
+  bool isConstructed() const override { return (box != nullptr); }
   bool isSane() const { return (box == nullptr) ? false : box->isSane(); };
   int  status() const { return (box == nullptr) ? Box::failunknown : box->getBoxStatus(); };
 

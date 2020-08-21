@@ -28,15 +28,22 @@ bool OrientedBoundingBox::containsElem(libMesh::dof_id_type id) const {
 
 void  OrientedBoundingBox::construct_obb() {
 
+  // Don't do anything if container is null or invalid
   if (elemsPtr == nullptr)
     return;
-  //Fetch a reference to container
+
+  if (!elemsPtr->isValid())
+    return;
+
+  // Fetch a reference to container
   const ElemContainer& elems = *elemsPtr;
 
   // Find basis vectors for the box
   Matrix basis;
   Matrix points;
   constructBasis(elems, basis, points);
+  if (basis.is_empty() || points.is_empty())
+    return;
 
   // Find the extremal points along the basis vecs
   Vector minPoint;
@@ -274,6 +281,9 @@ void OBBUtils::getPointsMatrix(const ElemContainer& elems,
       mean += elemMean;
 
     }
+    if (nElems == 0)
+      return;
+
     // Correctly normalise mean vector to number of elems
     mean *= (1.0 / double(nElems));
 
@@ -345,6 +355,8 @@ void OBBUtils::getElemStats(const ElemContainer& elems,
 
     // Fetch number of elems
     unsigned int nElems = areas.size();
+    if (nElems == 0)
+      return;
 
     // Correctly normalise mean vector
     mean *= (1.0 / double(nElems));
