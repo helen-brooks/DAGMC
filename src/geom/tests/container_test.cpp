@@ -221,10 +221,17 @@ TEST_F(ContainerTest, PredicateTypeTest) {
     = meshPtr->elements_begin();
   DAGMC::const_element_iterator elEnd
     = meshPtr->elements_end();
+
+  std::set< libMesh::subdomain_id_type > surf_ids;
+  meshPtr->subdomain_ids(surf_ids);
+  ASSERT_FALSE(surf_ids.empty());
+  auto surfit = surf_ids.begin();
+  libMesh::subdomain_id_type surf1 = *surfit;
+
   DAGMC::const_element_iterator elSurfBeg
-    = meshPtr->active_subdomain_elements_begin(0);
+    = meshPtr->active_subdomain_elements_begin(surf1);
   DAGMC::const_element_iterator elSurfEnd
-    = meshPtr->active_subdomain_elements_end(0);
+    = meshPtr->active_subdomain_elements_end(surf1);
 
   // Different types of predicate: not valid
   std::shared_ptr<DAGMC::ElemContainer> dagElems =
@@ -268,13 +275,13 @@ TEST_F(ContainerTest, PredicateArgTest) {
 
   // Get element iterators
   DAGMC::const_element_iterator elSurf1Beg
-    = meshPtr->active_subdomain_elements_begin(1);
+    = meshPtr->active_subdomain_elements_begin(surf1);
   DAGMC::const_element_iterator elSurf1End
-    = meshPtr->active_subdomain_elements_end(1);
+    = meshPtr->active_subdomain_elements_end(surf1);
   DAGMC::const_element_iterator elSurf2Beg
-    = meshPtr->active_subdomain_elements_begin(2);
+    = meshPtr->active_subdomain_elements_begin(surf2);
   DAGMC::const_element_iterator elSurf2End
-    = meshPtr->active_subdomain_elements_end(2);
+    = meshPtr->active_subdomain_elements_end(surf2);
   DAGMC::const_element_iterator elSurf2It
     = elSurf2Beg;
   elSurf2It++;
