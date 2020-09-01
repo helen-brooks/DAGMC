@@ -51,5 +51,6 @@ endif ()
 
 # Add currently self-isolated libmesh-dependent classes
 if(BUILD_LIBMESH)
+  add_subdirectory(mesh)
   add_subdirectory(geom)
 endif()

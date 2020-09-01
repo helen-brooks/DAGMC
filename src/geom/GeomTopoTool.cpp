@@ -27,9 +27,9 @@ bool GeomTopoToolLM::setupGeometry() {
   // Extract mapping of surfaces to volumes￼
   // 1) Initialise
   for (auto vol : vols) {
-    vol_to_surfs[int(vol)] = std::vector<int>();
+    vol_to_surfs[intmax_t(vol)] = std::vector<intmax_t>();
   }
-  vol_to_surfs[IMPLICIT_COMPLEMENT] = std::vector<int>();
+  vol_to_surfs[IMPLICIT_COMPLEMENT] = std::vector<intmax_t>();
 
   // 2) Loop over surfaces
   for (auto isurf : surf_ids) {
@@ -94,13 +94,13 @@ bool GeomTopoToolLM::setupGeometry() {
     }
 
     // Cast surface ID as int
-    int surf = int(isurf);
+    intmax_t surf(isurf);
 
     // Get pair of vols and cast as int
     auto it = shared_vols.begin();
-    int vol1 = int(*it);
+    intmax_t vol1(*it);
     it++;
-    int vol2 = int(*it);
+    intmax_t vol2(*it);
 
     if (surf == VOID_INDEX || vol1 == VOID_INDEX || vol2 == VOID_INDEX) {
       std::cerr << "The index " << VOID_INDEX << " is reserved.";
@@ -110,7 +110,12 @@ bool GeomTopoToolLM::setupGeometry() {
     }
 
     //Save
-    surf_to_vols[surf] = std::make_pair(vol1, vol2);
+    //TODO FIX
+    SurfaceSenses senses;
+    senses.forwards = vol1;
+    senses.backwards = vol2;
+
+    surf_to_vols[surf] = senses;
     vol_to_surfs[vol1].push_back(surf);
     vol_to_surfs[vol2].push_back(surf);
 
@@ -129,8 +134,8 @@ void GeomTopoToolLM::print() {
             << vol_to_surfs.size() << " volumes" << std::endl;
   for (auto& surf2vol : surf_to_vols) {
     std::cout << "Surface : " << surf2vol.first
-              << " --> vols (" << surf2vol.second.first
-              << " , " << surf2vol.second.second
+              << " --> vols (" << surf2vol.second.forwards
+              << " , " << surf2vol.second.backwards
               << ")" << std::endl;
   }
   for (auto& surfset : vol_to_surfs) {
@@ -143,7 +148,7 @@ void GeomTopoToolLM::print() {
   }
 }
 
-int GeomTopoToolLM::getVolID(unsigned int index) {
+intmax_t GeomTopoToolLM::getVolID(unsigned int index) {
 
   if (index >= nVols())
     return VOID_INDEX;
@@ -153,7 +158,7 @@ int GeomTopoToolLM::getVolID(unsigned int index) {
 
 }
 
-int GeomTopoToolLM::getSurfID(unsigned int index) {
+intmax_t GeomTopoToolLM::getSurfID(unsigned int index) {
 
   if (index >= nSurfs())
     return VOID_INDEX;
@@ -164,7 +169,7 @@ int GeomTopoToolLM::getSurfID(unsigned int index) {
 }
 
 //Get surfaces belonging to volume
-const std::vector<int>& GeomTopoToolLM::getSurfs(unsigned int index) {
+const std::vector<intmax_t>& GeomTopoToolLM::getSurfs(unsigned int index) {
 
   int id = getVolID(index);
   // Will throw exception for index out of range
@@ -173,7 +178,7 @@ const std::vector<int>& GeomTopoToolLM::getSurfs(unsigned int index) {
 }
 
 //Get volumes belonging to a surface
-const std::pair<int, int>& GeomTopoToolLM::getVolPair(unsigned int index) {
+const SurfaceSenses& GeomTopoToolLM::getVolPair(unsigned int index) {
 
   int id = getSurfID(index);
   // Will throw exception for index out of range

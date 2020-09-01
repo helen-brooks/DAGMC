@@ -2,7 +2,7 @@ macro (dagmc_setup_build)
   message("")
 
   # All DAGMC libraries
-  set(DAGMC_LIBRARY_LIST dagmc pyne_dagmc uwuw dagtally makeWatertight dagsolid fludag geom)
+  set(DAGMC_LIBRARY_LIST dagmc pyne_dagmc uwuw dagtally makeWatertight dagsolid fludag geom mesh)
 
   # Keep track of which libraries are installed
   set(DAGMC_LIBRARIES MOAB CACHE INTERNAL "DAGMC_LIBRARIES")

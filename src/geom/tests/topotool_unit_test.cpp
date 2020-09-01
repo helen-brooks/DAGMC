@@ -72,12 +72,12 @@ TEST_F(GeomTopoToolLMTest, setupGeometry) {
   EXPECT_EQ(gTTPtr->getSurfID(1), DAGMC::VOID_INDEX);
 
   // Check surfaces linked to volumes
-  const std::vector<int> surfs = gTTPtr->getSurfs(0);
+  const std::vector<intmax_t> surfs = gTTPtr->getSurfs(0);
   ASSERT_EQ(surfs.size(), 1);
   EXPECT_EQ(surfs.at(0), 1);
 
   // Both vols should point at same surf
-  const std::vector<int> surfs2 = gTTPtr->getSurfs(1);
+  const std::vector<intmax_t> surfs2 = gTTPtr->getSurfs(1);
   ASSERT_EQ(surfs2.size(), 1);
   EXPECT_EQ(surfs2.at(0), 1);
 
@@ -85,9 +85,9 @@ TEST_F(GeomTopoToolLMTest, setupGeometry) {
   ASSERT_THROW(gTTPtr->getSurfs(2), std::out_of_range);
 
   // Check vols linked to surfaces
-  const std::pair<int, int> volPairPtr = gTTPtr->getVolPair(0);
-  EXPECT_EQ(volPairPtr.first, DAGMC::IMPLICIT_COMPLEMENT);
-  EXPECT_EQ(volPairPtr.second, 1);
+  const DAGMC::SurfaceSenses& senses = gTTPtr->getVolPair(0);
+  EXPECT_EQ(senses.forwards, DAGMC::IMPLICIT_COMPLEMENT);
+  EXPECT_EQ(senses.backwards, 1);
 
   // This surface doesn't exist: throw exception
   ASSERT_THROW(gTTPtr->getVolPair(1), std::out_of_range);

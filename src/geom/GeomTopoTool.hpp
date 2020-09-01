@@ -1,15 +1,14 @@
 #ifndef DAG_GTT_HPP
 #define DAG_GTT_HPP
 
-// C++ include files that we need
-#include <iostream>
-// Libmesh headers
-#include "libmesh.hpp"
+// Libmesh interface
+#include "libmesh_interface.hpp"
 
 namespace DAGMC {
 
-const int IMPLICIT_COMPLEMENT = -1;
-const int VOID_INDEX = -999;
+// Use maximum integer width so that we are guaranteed to fit libMesh ID types
+const intmax_t IMPLICIT_COMPLEMENT = -1;
+const intmax_t VOID_INDEX = INTMAX_MIN;
 
 class GeomTopoTool {
 
@@ -26,13 +25,13 @@ class GeomTopoTool {
   virtual unsigned int nSurfs() = 0;
 
   // Convert from index to ID
-  virtual int getVolID(unsigned int index) = 0;
-  virtual int getSurfID(unsigned int index) = 0;
+  virtual intmax_t getVolID(unsigned int index) = 0;
+  virtual intmax_t getSurfID(unsigned int index) = 0;
 
   // Return constant reference to surfaces and volumes
   // associated with a given index
-  virtual const std::vector<int>& getSurfs(unsigned int index) = 0;
-  virtual const std::pair<int, int>& getVolPair(unsigned int index) = 0;
+  virtual const std::vector<intmax_t>& getSurfs(unsigned int index) = 0;
+  virtual const SurfaceSenses& getVolPair(unsigned int index) = 0;
 
  private:
 
@@ -63,13 +62,13 @@ class GeomTopoToolLM : public GeomTopoTool {
   };
 
   // Convert from index to ID
-  int getVolID(unsigned int index) override;
-  int getSurfID(unsigned int index) override;
+  intmax_t getVolID(unsigned int index) override;
+  intmax_t getSurfID(unsigned int index) override;
 
   // Return constant reference to surfaces and volumes
   // associated with a given index
-  const std::vector<int>& getSurfs(unsigned int index) override;
-  const std::pair<int, int>& getVolPair(unsigned int index) override;
+  const std::vector<intmax_t>& getSurfs(unsigned int index) override;
+  const SurfaceSenses& getVolPair(unsigned int index) override;
 
  private:
 
@@ -77,10 +76,8 @@ class GeomTopoToolLM : public GeomTopoTool {
   std::shared_ptr<libMesh::Mesh> meshPtr;
 
   // Booking for topological relationship heirarchy
-  std::map<int, std::vector<int> > vol_to_surfs;
-  std::map<int, std::pair<int, int> > surf_to_vols;
-  std::shared_ptr< std::vector<int> > dummy;
-
+  std::map<intmax_t, std::vector<intmax_t> > vol_to_surfs;
+  std::map<intmax_t, SurfaceSenses > surf_to_vols;
 };
 
 }// End namespace DAGMC
