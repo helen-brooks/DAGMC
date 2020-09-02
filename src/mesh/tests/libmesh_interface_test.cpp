@@ -15,17 +15,19 @@ class LibMeshInterfaceTest : public ::testing::Test {
 
   LibMeshInterfaceTest() {
     filenames.push_back("sphere-withattributes.e");
-
   };
 
-  virtual void SetUp() override {
+  void loadInternal() {
     //Emulate dummy command line args since required by libmesh
     int argc_dummy = 1;
     char dummych[] = "dummy";
     char* argv_dummy[] = { dummych };
     interface = std::make_shared<DAGMC::LibMeshInterface>(argc_dummy, argv_dummy);
-  };
-  virtual void TearDown() override {};
+  }
+
+  void loadExternal(libMesh::MeshBase& meshRef) {
+    interface = std::make_shared<DAGMC::LibMeshInterface>(meshRef);
+  }
 
   // Data members required for tests
   std::shared_ptr<DAGMC::MeshInterface> interface;
@@ -46,10 +48,28 @@ TEST_F(LibMeshInterfaceTest, IOPtr) {
 
 }
 
-TEST_F(LibMeshInterfaceTest, load) {
+TEST_F(LibMeshInterfaceTest, loadInternal) {
 
+  loadInternal();
   ASSERT_NE(interface, nullptr);
+  EXPECT_TRUE(interface->load(filenames.at(0)));
 
+}
+
+TEST_F(LibMeshInterfaceTest, loadExternal) {
+
+  //Emulate dummy command line args since required by libmesh
+  int argc_dummy = 1;
+  char dummych[] = "dummy";
+  char* argv_dummy[] = { dummych };
+
+  // Initialize the library
+  libMesh::LibMeshInit init(argc_dummy, argv_dummy);
+  // Create the mesh
+  libMesh::Mesh mesh(init.comm());
+
+  loadExternal(mesh);
+  ASSERT_NE(interface, nullptr);
   EXPECT_TRUE(interface->load(filenames.at(0)));
 
 }

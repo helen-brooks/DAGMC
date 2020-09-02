@@ -7,8 +7,7 @@ namespace DAGMC {
 // PUBLIC METHODS
 // *****************************************************************************
 
-LibMeshInterface::LibMeshInterface(int argc, const char* const* argv) {
-
+InternalMesh::InternalMesh(int argc, const char* const* argv) {
   // Initialize libMesh and handle any exceptions
   libmesh_try {
     // Initialize the library
@@ -17,13 +16,20 @@ LibMeshInterface::LibMeshInterface(int argc, const char* const* argv) {
     if (initPtr != nullptr) {
       meshPtr = std::make_shared<libMesh::Mesh>(initPtr->comm());
     }
-
   }
   libmesh_catch(libMesh::LogicError & e) {
     return;
   }
+};
 
+LibMeshInterface::LibMeshInterface(int argc, const char* const* argv) {
+  container = std::make_shared<InternalMesh>(argc, argv);
 }
+
+LibMeshInterface::LibMeshInterface(libMesh::MeshBase& meshRefIn) {
+  container = std::make_shared<ExternalMesh>(meshRefIn);
+}
+
 
 bool LibMeshInterface::load(std::string filename) {
 
@@ -43,11 +49,11 @@ bool LibMeshInterface::loadMesh(std::string filename) {
   bool meshLoaded = false;
   libmesh_try {
     // Read in the mesh data
-    if (meshPtr != nullptr) {
+    if (!meshIsNull()) {
       // Clear any prior data
-      meshPtr->clear();
-      meshPtr->read(filename);
-      meshLoaded = meshPtr->is_prepared();
+      mesh().clear();
+      mesh().read(filename);
+      meshLoaded = mesh().is_prepared();
     }
   }
   libmesh_catch(libMesh::LogicError & e) {
@@ -55,7 +61,6 @@ bool LibMeshInterface::loadMesh(std::string filename) {
   }
   return meshLoaded;
 }
-
 
 bool LibMeshInterface::loadSenseData(std::string filename) {
 
