@@ -113,7 +113,7 @@ void dagmcwritefacets_(char* ffile, int* flen) { // facet file
   // terminate all filenames with null char
   ffile[*flen]  = '\0';
 
-  moab::ErrorCode rval = DAG->write_mesh(ffile, *flen);
+  moab::ErrorCode rval = DAG->write_mesh(ffile);
   if (moab::MB_SUCCESS != rval) {
     std::cerr << "DAGMC failed to write mesh file: " << ffile <<  std::endl;
     exit(EXIT_FAILURE);

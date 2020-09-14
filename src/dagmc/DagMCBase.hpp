@@ -274,7 +274,7 @@ class DagMCBase {
                         std::vector<std::string>& value);
 
   // SECTION VI: Other
-  virtual ErrorCode write_mesh(const char* ffile, const int flen) = 0;
+  virtual ErrorCode write_mesh(const char* ffile) = 0;
   virtual ErrorCode getobb(EntityHandle volume, double minPt[3], double maxPt[3]) = 0;
   virtual ErrorCode getobb(EntityHandle volume, double center[3], double axis1[3],
                            double axis2[3], double axis3[3]) = 0;

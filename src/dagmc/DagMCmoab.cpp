@@ -422,12 +422,11 @@ void DagMCmoab::set_numerical_precision(double new_precision) {
 
 }
 
-ErrorCode DagMCmoab::write_mesh(const char* ffile,
-                                const int flen) {
+ErrorCode DagMCmoab::write_mesh(const char* ffile) {
   ErrorCode rval;
 
   // write out a mesh file if requested
-  if (ffile && 0 < flen) {
+  if (ffile) {
     rval = ErrorCode(MBI->write_mesh(ffile));
     if (DAG_SUCCESS != rval) {
       std::cerr << "Failed to write mesh to " << ffile << "." << std::endl;

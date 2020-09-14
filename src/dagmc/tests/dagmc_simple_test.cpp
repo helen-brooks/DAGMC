@@ -122,7 +122,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval) {
   EXPECT_EQ(rval, DAG_SUCCESS);
 
   // write the file
-  rval = dagmc->write_mesh("fcad", 4);
+  rval = dagmc->write_mesh("fcad");
 
   dagmc.reset(new DagMCmoab());
   rval = dagmc->load_file("fcad");
@@ -170,7 +170,7 @@ TEST_F(DagmcSimpleTest, dagmc_test_obb_retreval_rayfire) {
   EXPECT_EQ(rval, DAG_SUCCESS);
 
   // write the file
-  rval = dagmc->write_mesh("fcad", 4);
+  rval = dagmc->write_mesh("fcad");
 
   // now create new DAGMC
   dagmc.reset(new DagMCmoab());

@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
   }
 
   // write the new file
-  rval = DAG->write_mesh(out_file.c_str(), out_file.length());
+  rval = DAG->write_mesh(out_file.c_str());
   if (DAGMC::DAG_SUCCESS != rval) {
     std::cerr << "DAGMC failed write file with OBB" <<  std::endl;
     exit(EXIT_FAILURE);

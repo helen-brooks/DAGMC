@@ -305,7 +305,7 @@ class DagMCmoab : public DagMCBase {
 
   /* SECTION VI: Other */
  public:
-  ErrorCode write_mesh(const char* ffile, const int flen) override;
+  ErrorCode write_mesh(const char* ffile) override;
   /** get the corners of the OBB for a given volume */
   ErrorCode getobb(EntityHandle volume, double minPt[3], double maxPt[3]) override;
   /** get the center point and three vectors for the OBB of a given volume */
