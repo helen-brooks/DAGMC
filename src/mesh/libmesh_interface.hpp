@@ -6,18 +6,8 @@
 
 namespace DAGMC {
 
-// Wrapper to agnosticize whether mesh is internal or external
-class MeshContainer {
- public:
-  MeshContainer() {};
-  ~MeshContainer() {};
-  virtual libMesh::MeshBase& mesh() = 0;
-  virtual const libMesh::MeshBase& const_mesh() const = 0;
-  virtual bool isNull() { return false; };
-};
-
 // Saves a reference to an external mesh
-class ExternalMesh : public MeshContainer {
+class ExternalMesh : public MeshContainer<libMesh::MeshBase> {
 
  public:
   ExternalMesh(libMesh::MeshBase& meshRefIn) : _mesh(meshRefIn) {};
@@ -32,7 +22,7 @@ class ExternalMesh : public MeshContainer {
 };
 
 // This container owns the mesh and calls its contructor
-class InternalMesh : public MeshContainer {
+class InternalMesh : public MeshContainer<libMesh::MeshBase> {
 
  public:
 
@@ -64,6 +54,7 @@ class LibMeshInterface : public MeshInterface {
 
   // Load data from filename into memory
   virtual bool load(std::string filename) override;
+  virtual bool write(std::string filename) override;
 
   // Get a copy of sense data
   std::map<intmax_t, SurfaceSenses > getSenseData() {
@@ -93,7 +84,7 @@ class LibMeshInterface : public MeshInterface {
   bool loadSenseData(std::string filename);
 
   // Container for the mesh
-  std::shared_ptr<MeshContainer> container;
+  std::shared_ptr<MeshContainer<libMesh::MeshBase> > container;
 
   // Additional mesh attributes
   MeshAttributes attributes;

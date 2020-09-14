@@ -40,6 +40,12 @@ bool LibMeshInterface::load(std::string filename) {
     return loadSenseData(filename);
 }
 
+bool LibMeshInterface::write(std::string filename) {
+  std::cerr << "Failed to write mesh." << std::endl;
+  return false;
+}
+
+
 // *****************************************************************************
 // PRIVATE METHODS
 // *****************************************************************************

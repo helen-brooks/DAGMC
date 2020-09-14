@@ -17,6 +17,7 @@ class MeshInterface {
   ~MeshInterface() {};
 
   virtual bool load(std::string filename) = 0;
+  virtual bool write(std::string filename) = 0;
 
 };
 
@@ -35,5 +36,16 @@ struct MeshAttributes {
   // Add more here as required
 };
 }
+
+// Wrapper to agnosticize whether mesh is internal or external
+template < class MeshType >
+class MeshContainer {
+ public:
+  MeshContainer<MeshType>() {};
+  ~MeshContainer<MeshType>() {};
+  virtual MeshType& mesh() = 0;
+  virtual const MeshType& const_mesh() const = 0;
+  virtual bool isNull() { return false; };
+};
 
 #endif
