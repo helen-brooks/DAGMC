@@ -252,6 +252,7 @@ class DagMCBase {
                                      const char* delimiters = "_") = 0;
   virtual bool has_prop(EntityHandle eh, const std::string& prop) = 0;
   virtual bool is_implicit_complement(EntityHandle volume) = 0;
+  virtual ErrorCode prop_value(EntityHandle eh, const std::string& prop, std::string& value) = 0;
 
   /** Detect all the property keywords that appear in the loaded geometry
    *

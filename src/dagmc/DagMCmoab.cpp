@@ -579,7 +579,7 @@ ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
   return DAG_SUCCESS;
 }
 
-/* ErrorCode DagMC::prop_value(EntityHandle eh, const std::string& prop, std::string& value) {
+ErrorCode DagMCmoab::prop_value(EntityHandle eh, const std::string& prop, std::string& value) {
   ErrorCode rval;
 
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
@@ -591,12 +591,12 @@ ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
   const void* data;
   int ignored;
 
-  rval = MBI->tag_get_by_ptr(proptag, &eh, 1, &data, &ignored);
+  rval = ErrorCode(MBI->tag_get_by_ptr(proptag, &eh, 1, &data, &ignored));
   if (rval != DAG_SUCCESS)
     return rval;
   value = static_cast<const char*>(data);
   return DAG_SUCCESS;
-} */
+}
 
 bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
   ErrorCode rval;
@@ -615,6 +615,8 @@ bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
 
 }
 
+
+// These methods are currently commented out because I don't know where they are used.
 /* ErrorCode DagMC::get_all_prop_values(const std::string& prop, std::vector<std::string>& return_list) {
   ErrorCode rval;
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);

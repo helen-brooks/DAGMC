@@ -211,6 +211,7 @@ class DagMCmoab : public DagMCBase {
 
 
   /* SECTION V: Metadata handling */
+
   /** \brief Parse properties from group names per metadata syntax standard
    *
    *  @param keywords A list of keywords to parse.  These are considered the canonical
@@ -228,6 +229,17 @@ class DagMCmoab : public DagMCBase {
   ErrorCode parse_properties(const std::vector<std::string>& keywords,
                              const std::map<std::string, std::string>& synonyms = no_synonyms,
                              const char* delimiters = "_") override;
+
+  /** Get the value of a property on a volume or surface
+   *
+   *  @param eh The entity handle to get a property value on
+   *  @param prop The canonical property name
+   *  @param value Output parameter, the value of the property.  If no value was
+   *               set on the handle, this will be the empty string.
+   *  @return MB_TAG_NOT_FOUND if prop is invalid.  Otherwise return any errors from
+   *          MOAB, or MB_SUCCESS if successful
+   */
+  ErrorCode prop_value(EntityHandle eh, const std::string& prop, std::string& value) override;
 
   /** \brief Get the value of a property on a volume or surface
    *
@@ -255,15 +267,8 @@ class DagMCmoab : public DagMCBase {
   Tag sense_tag() { return GTT->get_sense_tag(); }
 
  private:
-  /*     /** \brief Get a list of all unique values assigned to a named property on any entity
-       *
-       *  @param prop The canonical property name
-       *  @param return_list Output param, a list of unique strings that are set as values for this property
-       *  @return MB_TAG_NOT_FOUND if prop is invalid.  Otherwise return any errors from
-       *          MOAB, or MB_SUCCESS if succesful
-           ErrorCode prop_value(EntityHandle eh, const std::string& prop, std::string& value);
-       */
 
+  // These methods are currently commented out because I don't know where they are used.
   /*     /** Return true if a volume or surface has the named property set upon it
        *
        *  @param eh The entity handle to query
