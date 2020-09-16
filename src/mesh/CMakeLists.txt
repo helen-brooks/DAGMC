@@ -3,7 +3,7 @@ file(GLOB PUB_HEADERS "*.hpp")
 
 # Set libs for linking
 set(LINK_LIBS)
-set(LINK_LIBS_EXTERN_NAMES libMesh_LIBRARIES)
+set(LINK_LIBS_EXTERN_NAMES  MOAB_LIBRARIES HDF5_LIBRARIES libMesh_LIBRARIES)
 
 include_directories(${CMAKE_BINARY_DIR}/src/mesh)
 

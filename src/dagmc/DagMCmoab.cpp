@@ -1,24 +1,11 @@
 #include "DagMCmoab.hpp"
 
-/* #include <algorithm>
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h> */
-
-#ifndef M_PI  /* windows */
-# define M_PI 3.14159265358979323846
-#endif
-
 #ifdef DOUBLE_DOWN
 #include "RTI.hpp"
 #include "MOABRay.h"
 #endif
 
-#define MB_OBB_TREE_TAG_NAME "OBB_TREE"
-#define FACETING_TOL_TAG_NAME "FACETING_TOL"
-static const int null_delimiter_length = 1;
+//#define MB_OBB_TREE_TAG_NAME "OBB_TREE"
 
 namespace DAGMC {
 
@@ -40,23 +27,15 @@ DagMCmoab::DagMCmoab(std::shared_ptr<Interface> mb_impl, double overlap_toleranc
   std::cout << "Using the DOUBLE-DOWN interface to Embree." << std::endl;
 #endif
 
-  moab_instance_created = false;
-
   // Create error handler
   errHandler = std::make_unique<MoabErrHandler>();
 
-  // If we aren't handed a moab instance create one
-  if (nullptr == mb_impl) {
-    mb_impl = std::make_shared<Core>();
-    moab_instance_created = true;
-  }
-
-  MBI_shared_ptr = mb_impl;
-  // set the internal moab pointer
-  MBI = MBI_shared_ptr.get();
+  // Create an interface to MOAB
+  mesh_interface = std::make_shared<MoabInterface>(mb_impl);
 
   // make new GeomTopoTool and GeomQueryTool
-  GTT = std::make_shared<GeomTopoTool> (MBI, false);
+  GTT = std::make_shared<GeomTopoTool>(moab_instance(), false);
+
 #ifdef DOUBLE_DOWN
   ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT));
 #else
@@ -68,17 +47,16 @@ DagMCmoab::DagMCmoab(std::shared_ptr<Interface> mb_impl, double overlap_toleranc
 }
 
 DagMCmoab::DagMCmoab(Interface* mb_impl, double overlap_tolerance, double p_numerical_precision) {
-  moab_instance_created = false;
 
   // Create error handler
   errHandler = std::make_unique<MoabErrHandler>();
 
-  // set the internal moab pointer
-  MBI = mb_impl;
-  MBI_shared_ptr = nullptr;
+  // Create an interface to MOAB
+  mesh_interface = std::make_shared<MoabInterface>(mb_impl);
 
   // make new GeomTopoTool and GeomQueryTool
-  GTT = std::make_shared<GeomTopoTool> (MBI, false);
+  GTT = std::make_shared<GeomTopoTool>(moab_instance(), false);
+
 #ifdef DOUBLE_DOWN
   ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT));
 #else
@@ -89,65 +67,25 @@ DagMCmoab::DagMCmoab(Interface* mb_impl, double overlap_tolerance, double p_nume
 
 }
 
-// Destructor
-DagMCmoab::~DagMCmoab() {
-  // if we created the moab instance
-  // clear it
-  if (moab_instance_created) {
-    MBI->delete_mesh();
-  }
-}
-
-// get the float verision of dagmc version string
-float DagMC::version(std::string* version_string) {
-  if (NULL != version_string)
-    *version_string = std::string("DagMC version ") + std::string(DAGMC_VERSION_STRING);
-  return DAGMC_VERSION;
-}
-
 // *****************************************************************************
 // SECTION I: Geometry Initialization and problem setup
 // *****************************************************************************
 
 // the standard DAGMC load file method
 ErrorCode DagMCmoab::load_file(const char* cfile) {
-  ErrorCode rval;
-  std::string filename(cfile);
-  std::cout << "Loading file " << cfile << std::endl;
-  // load options
-  char options[120] = {0};
-  std::string file_ext = "" ; // file extension
 
-  // get the last 4 chars of file .i.e .h5m .sat etc
-  int file_extension_size = 4;
-  if (filename.size() > file_extension_size) {
-    file_ext = filename.substr(filename.size() - file_extension_size);
-  }
-  EntityHandle file_set;
-  rval = ErrorCode(MBI->create_meshset(moab::MESHSET_SET, file_set));
-  if (DAG_SUCCESS != rval)
-    return rval;
+  if (!mesh_interface->load(std::string(cfile))) {
+    return mesh_interface->code();
+  } else
+    return finish_loading();
 
-  rval = ErrorCode(MBI->load_file(cfile, &file_set, options, NULL, 0, 0));
+}
 
-  if (DAG_UNHANDLED_OPTION == rval) {
-    // Some options were unhandled; this is common for loading h5m files.
-    // Print a warning if an option was unhandled for a file that does not end in '.h5m'
-    std::string filename(cfile);
-    if (file_ext != ".h5m") {
-      std::cerr << "DagMC warning: unhandled file loading options." << std::endl;
-    }
-  } else if (DAG_SUCCESS != rval) {
-    std::cerr << "DagMC Couldn't read file " << cfile << std::endl;
-    std::string message;
-    if (DAG_SUCCESS == ErrorCode(MBI->get_last_error(message)) && !message.empty())
-      std::cerr << "Error message: " << message << std::endl;
-
-    return rval;
-  }
-
+// helper function to load the existing contents of a MOAB instance into DAGMC
+ErrorCode DagMCmoab::load_existing_contents() {
   return finish_loading();
 }
+
 
 // setup the implicit compliment
 ErrorCode DagMCmoab::setup_impl_compl() {
@@ -159,6 +97,37 @@ ErrorCode DagMCmoab::setup_impl_compl() {
     return rval;
   }
   return DAG_SUCCESS;
+}
+
+// initialise the obb tree
+ErrorCode DagMCmoab::init_OBBTree() {
+
+  // find all geometry sets
+  errHandler->checkSetErr(find_geomsets(),
+                          "Could not find the geometry sets");
+
+  // implicit complement
+  errHandler->checkSetErr(setup_impl_compl(),
+                          "Failed to setup the implicit complement");
+
+  // build obbs
+  errHandler->checkSetErr(setup_obbs(), "Failed to setup the OBBs");
+
+  // setup indices
+  errHandler->checkSetErr(setup_indices(), "Failed to setup problem indices");
+
+  return DAG_SUCCESS;
+}
+
+// setups of the indices for the problem, builds a list of surface and volumes
+// indices
+ErrorCode DagMCmoab::setup_indices() {
+  Range surfs, vols;
+  errHandler->checkSetErr(setup_geometry(surfs, vols), "Failed to setup geometry");
+  // build the various index vectors used for efficiency
+  errHandler->checkSetErr(build_indices(surfs, vols), "Failed to build surface/volume indices");
+
+  return errHandler->code();
 }
 
 // gets the entity sets tagged with geomtag 2 and 3
@@ -182,9 +151,8 @@ ErrorCode DagMCmoab::setup_obbs() {
   if (!GTT->have_obb_tree()) {
     std::cout << "Building acceleration data structures..." << std::endl;
 #ifdef DOUBLE_DOWN
-    rval =
-        errHandler->checkSetErr(ray_tracer->init();,
-                                "Failed to build obb trees");
+    errHandler->checkSetErr(ray_tracer->init(),
+                            "Failed to build obb trees");
 #else
     errHandler->checkSetErr(GTT->construct_obb_trees(),
                             "Failed to build obb trees");
@@ -195,45 +163,9 @@ ErrorCode DagMCmoab::setup_obbs() {
 
 // helper function to finish setting up required tags.
 ErrorCode DagMCmoab::finish_loading() {
-  ErrorCode rval;
 
-  nameTag = get_tag(NAME_TAG_NAME, NAME_TAG_SIZE,
-                    moab::MB_TAG_SPARSE,
-                    moab::MB_TYPE_OPAQUE,
-                    NULL, false);
-
-  facetingTolTag = get_tag(FACETING_TOL_TAG_NAME, 1,
-                           moab::MB_TAG_SPARSE, moab::MB_TYPE_DOUBLE);
-
-  // search for a tag that has the faceting tolerance
-  Range tagged_sets;
-  double facet_tol_tagvalue = 0;
-  bool other_set_tagged = false, root_tagged = false;
-
-  // get list of entity sets that are tagged with faceting tolerance
-  // (possibly empty set)
-  rval = ErrorCode(MBI->get_entities_by_type_and_tag(0, moab::MBENTITYSET, &facetingTolTag,
-                                                     NULL, 1, tagged_sets));
-  // if NOT empty set
-  if (DAG_SUCCESS == rval && !tagged_sets.empty()) {
-    rval = ErrorCode(MBI->tag_get_data(facetingTolTag, &(*tagged_sets.begin()),
-                                       1, &facet_tol_tagvalue));
-    if (DAG_SUCCESS != rval)
-      return rval;
-    other_set_tagged = true;
-  } else if (DAG_SUCCESS == rval) {
-    // check to see if interface is tagged
-    EntityHandle root = 0;
-    rval = ErrorCode(MBI->tag_get_data(facetingTolTag, &root,
-                                       1, &facet_tol_tagvalue));
-    if (DAG_SUCCESS == rval)
-      root_tagged = true;
-    else
-      rval = DAG_SUCCESS;
-  }
-
-  if ((root_tagged || other_set_tagged) && facet_tol_tagvalue > 0) {
-    facetingTolerance = facet_tol_tagvalue;
+  if (!mesh_interface->get_faceting_tol(facetingTolerance)) {
+    return mesh_interface->code();
   }
 
   // initialize ray_tracer
@@ -241,10 +173,9 @@ ErrorCode DagMCmoab::finish_loading() {
   errHandler->checkSetErr(GTT->find_geomsets(),
                           "Failed to find the geometry sets");
 
-  std::cout << "Using faceting tolerance: " << facetingTolerance << std::endl;
-
   return DAG_SUCCESS;
 }
+
 
 // *****************************************************************************
 // SECTION II: Fundamental Geometry Operations/Queries
@@ -337,8 +268,9 @@ int DagMCmoab::id_by_index(int dimension, int index) {
   if (!h)
     return 0;
 
+  // TO-DO should this throw if set_tag_data == false?
   int result = 0;
-  MBI->tag_get_data(GTT->get_gid_tag(), &h, 1, &result);
+  mesh_interface->get_tag_data(GTT->get_gid_tag(), &h, 1, &result);
   return result;
 }
 
@@ -347,14 +279,13 @@ int DagMCmoab::get_entity_id(EntityHandle this_ent) {
 }
 
 ErrorCode DagMCmoab::build_indices(Range& surfs, Range& vols) {
-  ErrorCode rval = DAG_SUCCESS;
-
 
   if (surfs.size() == 0 || vols.size() == 0) {
     std::cout << "Volumes or Surfaces not found" << std::endl;
     return  DAG_ENTITY_NOT_FOUND;
   }
   setOffset = std::min(*surfs.begin(), *vols.begin());
+
   // surf/vol offsets are just first handles
   EntityHandle tmp_offset = std::max(surfs.back(), vols.back());
 
@@ -365,6 +296,7 @@ ErrorCode DagMCmoab::build_indices(Range& surfs, Range& vols) {
   // index by handle lists
   surf_handles().resize(surfs.size() + 1);
   std::vector<EntityHandle>::iterator iter = surf_handles().begin();
+
   // MCNP wants a 1-based index but C++ has a 0-based index. So we need to set
   // the first value to 0 and then start at the next position in the vector
   // (iter++) thereafter.
@@ -386,23 +318,11 @@ ErrorCode DagMCmoab::build_indices(Range& surfs, Range& vols) {
   for (Range::iterator rit = vols.begin(); rit != vols.end(); ++rit)
     entIndices[*rit - setOffset] = idx++;
 
-  // get group handles
-  Tag category_tag = get_tag(CATEGORY_TAG_NAME, CATEGORY_TAG_SIZE,
-                             moab::MB_TAG_SPARSE, moab::MB_TYPE_OPAQUE);
-  char group_category[CATEGORY_TAG_SIZE];
-  std::fill(group_category, group_category + CATEGORY_TAG_SIZE, '\0');
-  sprintf(group_category, "%s", "Group");
-  const void* const group_val[] = {&group_category};
-  Range groups;
-  rval = ErrorCode(MBI->get_entities_by_type_and_tag(0, moab::MBENTITYSET, &category_tag,
-                                                     group_val, 1, groups));
-  if (DAG_SUCCESS != rval)
-    return rval;
-  group_handles().resize(groups.size() + 1);
-  group_handles()[0] = 0;
-  std::copy(groups.begin(), groups.end(), &group_handles()[1]);
-
-  return DAG_SUCCESS;
+  // Get group handles
+  if (!mesh_interface->get_group_handles(group_handles())) {
+    return mesh_interface->code();
+  } else
+    return DAG_SUCCESS;
 }
 
 // *****************************************************************************
@@ -423,14 +343,12 @@ void DagMCmoab::set_numerical_precision(double new_precision) {
 }
 
 ErrorCode DagMCmoab::write_mesh(const char* ffile) {
-  ErrorCode rval;
 
-  // write out a mesh file if requested
+  // Write out a mesh file if requested
   if (ffile) {
-    rval = ErrorCode(MBI->write_mesh(ffile));
-    if (DAG_SUCCESS != rval) {
+    if (!mesh_interface->write(std::string(ffile))) {
       std::cerr << "Failed to write mesh to " << ffile << "." << std::endl;
-      return rval;
+      return mesh_interface->code();
     }
   }
 
@@ -441,75 +359,95 @@ ErrorCode DagMCmoab::write_mesh(const char* ffile) {
 // SECTION V: Metadata handling
 // *****************************************************************************
 
-ErrorCode DagMCmoab::get_group_name(EntityHandle group_set, std::string& name) {
+ErrorCode DagMCmoab::parse_group_name(EntityHandle group_set, prop_map& result,
+                                      const char* delimiters) {
+
+  std::string group_name;
+  if (!mesh_interface->get_group_name(group_set, group_name)) {
+    return mesh_interface->code();
+  }
+
+  std::vector< std::string > group_tokens;
+  tokenize(group_name, group_tokens, delimiters);
+
+  // iterate over all the keyword positions
+  // keywords are even indices, their values (optional) are odd indices
+  for (unsigned int i = 0; i < group_tokens.size(); i += 2) {
+    std::string groupkey = group_tokens[i];
+    std::string groupval;
+    if (i < group_tokens.size() - 1)
+      groupval = group_tokens[i + 1];
+    result[groupkey] = groupval;
+  }
+  return DAG_SUCCESS;
+}
+
+ErrorCode DagMCmoab::detect_available_props(std::vector<std::string>& keywords_list,
+                                            const char* delimiters) {
   ErrorCode rval;
-  const void* v = NULL;
-  int ignored;
-  rval = ErrorCode(MBI->tag_get_by_ptr(name_tag(), &group_set, 1, &v, &ignored));
-  if (DAG_SUCCESS != rval)
-    return rval;
-  name = static_cast<const char*>(v);
+  std::set< std::string > keywords;
+  for (auto group : group_handles()) {
+
+    std::map< std::string, std::string > properties;
+    rval = parse_group_name(group, properties, delimiters);
+    if (rval == DAG_TAG_NOT_FOUND)
+      continue;
+    else if (rval != DAG_SUCCESS)
+      return rval;
+
+    for (auto& prop : properties) {
+      keywords.insert(prop.first);
+    }
+  }
+  keywords_list.assign(keywords.begin(), keywords.end());
   return DAG_SUCCESS;
 }
 
 ErrorCode DagMCmoab::append_packed_string(Tag tag, EntityHandle eh,
                                           std::string& new_string) {
-  // When properties have multiple values, the values are tagged in a single character array
-  // with the different values separated by null characters
-  ErrorCode rval;
-  const void* p;
-  const char* str;
-  int len;
-  rval = ErrorCode(MBI->tag_get_by_ptr(tag, &eh, 1, &p, &len));
-  if (rval == DAG_TAG_NOT_FOUND) {
+
+  // Fetch the existing string associated with this tag
+  std::string old_str;
+  if (!mesh_interface->get_tag_name(tag, eh, old_str)) {
+    ErrorCode rval = mesh_interface->code();
     // This is the first entry, and can be set directly
-    p = new_string.c_str();
-    return ErrorCode(MBI->tag_clear_data(tag, &eh, 1, p, new_string.length() + 1));
-  } else if (rval != DAG_SUCCESS)
-    return rval;
-  else {
-    str = static_cast<const char*>(p);
+    if (rval == DAG_TAG_NOT_FOUND) {
+      if (!mesh_interface->set_tag(tag, eh, new_string)) {
+        return mesh_interface->code();
+      } else {
+        return DAG_SUCCESS;
+      }
+    } else
+      return rval;
   }
 
-  // append a new value for the property to the existing property string
-  unsigned int tail_len = new_string.length() + null_delimiter_length;
-  int new_len = tail_len + len;
+  // Append a new value for the property to the existing property string
+  std::stringstream new_ss;
+  new_ss << old_str << new_string;
+  std::string appended = new_ss.str();
 
-  char* new_packed_string = new char[ new_len ];
-  memcpy(new_packed_string, str, len);
-  memcpy(new_packed_string + len, new_string.c_str(), tail_len);
+  // Set new string
+  if (!mesh_interface->set_tag(tag, eh, appended)) {
+    return mesh_interface->code();
+  } else
+    return DAG_SUCCESS;
 
-  p = new_packed_string;
-  rval = ErrorCode(MBI->tag_set_by_ptr(tag, &eh, 1, &p, &new_len));
-  delete[] new_packed_string;
-  return rval;
 }
 
 ErrorCode DagMCmoab::unpack_packed_string(Tag tag, EntityHandle eh,
                                           std::vector< std::string >& values) {
-  ErrorCode rval;
-  const void* p;
-  const char* str;
-  int len;
-  rval = ErrorCode(MBI->tag_get_by_ptr(tag, &eh, 1, &p, &len));
-  if (rval != DAG_SUCCESS)
-    return rval;
-  str = static_cast<const char*>(p);
-  int idx = 0;
-  while (idx < len) {
-    std::string item(str + idx);
-    values.push_back(item);
-    idx += item.length() + null_delimiter_length;
+  if (!mesh_interface->get_tag_data(tag, eh, values)) {
+    return mesh_interface->code();
   }
   return DAG_SUCCESS;
 }
 
 ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
-                                      const std::map<std::string, std::string>& keyword_synonyms,
+                                      const std::map<std::string,
+                                      std::string>& keyword_synonyms,
                                       const char* delimiters) {
-  ErrorCode rval;
 
-  // master keyword map, mapping user-set words in cubit to canonical property names
+  // Master keyword map, mapping user-set words in cubit to canonical property names
   std::map< std::string, std::string > keyword_map(keyword_synonyms);
 
   for (std::vector<std::string>::const_iterator i = keywords.begin();
@@ -517,58 +455,51 @@ ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
     keyword_map[*i] = *i;
   }
 
-  // the set of all canonical property names
+  // The set of all canonical property names
   std::set< std::string > prop_names;
   for (prop_map::iterator i = keyword_map.begin();
        i != keyword_map.end(); ++i) {
     prop_names.insert((*i).second);
   }
 
-  // set up DagMC's property tags based on what's been requested
+  // Set up DagMC's property tags based on what's been requested
   for (std::set<std::string>::iterator i = prop_names.begin();
        i != prop_names.end(); ++i) {
     std::string tagname("DAGMCPROP_");
     tagname += (*i);
 
     Tag new_tag;
-    rval = ErrorCode(MBI->tag_get_handle(tagname.c_str(), 0,
-                                         moab::MB_TYPE_OPAQUE, new_tag,
-                                         (moab::MB_TAG_SPARSE |
-                                          moab::MB_TAG_VARLEN |
-                                          moab::MB_TAG_CREAT)));
-    if (DAG_SUCCESS != rval)
-      return rval;
+    if (!mesh_interface->get_tag(tagname, new_tag)) {
+      return mesh_interface->code();
+    }
     property_tagmap[(*i)] = new_tag;
+
   }
 
-  // now that the keywords and tags are ready, iterate over all the actual geometry groups
-  for (std::vector<EntityHandle>::iterator grp = group_handles().begin();
-       grp != group_handles().end(); ++grp) {
+  // Now that the keywords and tags are ready, iterate over all the actual geometry groups
+  for (auto& group : group_handles()) {
 
     prop_map properties;
-    rval = parse_group_name(*grp, properties, delimiters);
+    ErrorCode rval = parse_group_name(group, properties, delimiters);
     if (rval == DAG_TAG_NOT_FOUND)
       continue;
     else if (rval != DAG_SUCCESS)
       return rval;
 
-    Range grp_sets;
-    rval = ErrorCode(MBI->get_entities_by_type(*grp, moab::MBENTITYSET, grp_sets));
-    if (DAG_SUCCESS != rval)
-      return rval;
-    if (grp_sets.size() == 0)
+    Range group_sets;
+    if (!mesh_interface->get_entity_sets(group, group_sets))
+      return mesh_interface->code();
+    else if (group_sets.empty())
       continue;
 
-    for (prop_map::iterator i = properties.begin();
-         i != properties.end(); ++i) {
-      std::string groupkey = (*i).first;
-      std::string groupval = (*i).second;
+    for (auto& prop : properties) {
+      std::string groupkey = prop.first;
+      std::string groupval = prop.second;
 
       if (property_tagmap.find(groupkey) != property_tagmap.end()) {
         Tag proptag = property_tagmap[groupkey];
-        const unsigned int groupsize = grp_sets.size();
-        for (unsigned int j = 0; j < groupsize; ++j) {
-          rval = append_packed_string(proptag, grp_sets[j], groupval);
+        for (auto& groupset : group_sets) {
+          rval = append_packed_string(proptag, groupset, groupval);
           if (DAG_SUCCESS != rval)
             return rval;
         }
@@ -579,60 +510,66 @@ ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
 }
 
 ErrorCode DagMCmoab::prop_value(EntityHandle eh, const std::string& prop, std::string& value) {
-  ErrorCode rval;
 
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
   if (it == property_tagmap.end()) {
     return DAG_TAG_NOT_FOUND;
   }
-
   Tag proptag = (*it).second;
-  const void* data;
-  int ignored;
 
-  rval = ErrorCode(MBI->tag_get_by_ptr(proptag, &eh, 1, &data, &ignored));
-  if (rval != DAG_SUCCESS)
-    return rval;
-  value = static_cast<const char*>(data);
+  if (!mesh_interface->get_tag_name(proptag, eh, value)) {
+    return mesh_interface->code();
+  }
+
   return DAG_SUCCESS;
 }
 
+ErrorCode DagMCmoab::prop_values(EntityHandle eh, const std::string& prop,
+                                 std::vector< std::string >& values) {
+
+  std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
+  if (it == property_tagmap.end()) {
+    return DAG_TAG_NOT_FOUND;
+  }
+  Tag proptag = (*it).second;
+
+  return unpack_packed_string(proptag, eh, values);
+
+}
+
 bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
-  ErrorCode rval;
 
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
   if (it == property_tagmap.end()) {
     return false;
   }
-
   Tag proptag = (*it).second;
-  const void* data;
-  int ignored;
+  std::string dummyvalue;
+  bool found = mesh_interface->get_tag_name(proptag, eh, dummyvalue);
 
-  rval = ErrorCode(MBI->tag_get_by_ptr(proptag, &eh, 1, &data, &ignored));
-  return (rval == DAG_SUCCESS);
+  return found;
 
 }
 
-
-// These methods are currently commented out because I don't know where they are used.
-/* ErrorCode DagMC::get_all_prop_values(const std::string& prop, std::vector<std::string>& return_list) {
+// TO-DO: figure out where this are used
+ErrorCode DagMCmoab::get_all_prop_values(const std::string& prop, std::vector<std::string>& return_list) {
   ErrorCode rval;
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
   if (it == property_tagmap.end()) {
-    return MB_TAG_NOT_FOUND;
+    return DAG_TAG_NOT_FOUND;
   }
+
+  EntityHandle root = 0;
   Tag proptag = (*it).second;
   Range all_ents;
-
-  rval = MBI->get_entities_by_type_and_tag(0, MBENTITYSET, &proptag, NULL, 1, all_ents);
-  if (DAG_SUCCESS != rval)
-    return rval;
+  if (!mesh_interface->get_tagged_entity_sets(root, proptag, all_ents)) {
+    return mesh_interface->code();
+  }
 
   std::set<std::string> unique_values;
-  for (Range::iterator i = all_ents.begin(); i != all_ents.end(); ++i) {
+  for (auto& entity : all_ents) {
     std::vector<std::string> values;
-    rval = prop_values(*i, prop, values);
+    rval = prop_values(entity, prop, values);
     if (DAG_SUCCESS != rval)
       return rval;
     unique_values.insert(values.begin(), values.end());
@@ -640,67 +577,65 @@ bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
 
   return_list.assign(unique_values.begin(), unique_values.end());
   return DAG_SUCCESS;
-} */
+}
 
-/* ErrorCode DagMC::entities_by_property(const std::string& prop, std::vector<EntityHandle>& return_list,
-                                      int dimension, const std::string* value) {
+ErrorCode DagMCmoab::entities_by_property(const std::string& prop,
+                                          std::vector<EntityHandle>& return_list,
+                                          int dimension, const std::string* value) {
   ErrorCode rval;
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
   if (it == property_tagmap.end()) {
-    return MB_TAG_NOT_FOUND;
+    return DAG_TAG_NOT_FOUND;
   }
   Tag proptag = (*it).second;
   Range all_ents;
+  EntityHandle root = 0;
+  std::vector<Tag> tags = {proptag, GTT->get_geom_tag()};
 
   // Note that we cannot specify values for proptag here-- the passed value,
   // if it exists, may be only a subset of the packed string representation
   // of this tag.
-  Tag tags[2] = {proptag, GTT->get_geom_tag()};
-  void* vals[2] = {NULL, (dimension != 0) ? &dimension : NULL };
-  rval = MBI->get_entities_by_type_and_tag(0, MBENTITYSET, tags, vals, 2, all_ents);
-  if (DAG_SUCCESS != rval)
-    return rval;
+
+  if (!mesh_interface->get_tagged_entity_sets(root, tags, all_ents)) {
+    return mesh_interface->code();
+  }
 
   std::set<EntityHandle> handles;
-  for (Range::iterator i = all_ents.begin(); i != all_ents.end(); ++i) {
+  for (auto& ent : all_ents) {
     std::vector<std::string> values;
-    rval = prop_values(*i, prop, values);
+    rval = prop_values(ent, prop, values);
     if (DAG_SUCCESS != rval)
       return rval;
-    if (value) {
-      if (std::find(values.begin(), values.end(), *value) != values.end()) {
-        handles.insert(*i);
-      }
+    if (value && std::find(values.begin(), values.end(), *value) != values.end()) {
+      handles.insert(ent);
     } else {
-      handles.insert(*i);
+      handles.insert(ent);
     }
   }
 
   return_list.assign(handles.begin(), handles.end());
   return DAG_SUCCESS;
-} */
+}
 
 bool DagMCmoab::is_implicit_complement(EntityHandle volume) {
   return GTT->is_implicit_complement(volume);
 }
 
-Tag DagMCmoab::get_tag(const char* name, int size, TagType store,
-                       DataType type, const void* def_value,
-                       bool create_if_missing) {
-  Tag retval = 0;
-  unsigned flags = store | moab::MB_TAG_CREAT;
-  // NOTE: this function seems to be broken in that create_if_missing has
-  // the opposite meaning from what its name implies.  However, changing the
-  // behavior causes tests to fail, so I'm leaving the existing behavior
-  // in place.  -- j.kraftcheck.
-  if (!create_if_missing)
-    flags |= moab::MB_TAG_EXCL;
-  ErrorCode result = ErrorCode(MBI->tag_get_handle(name, size, type, retval, flags, def_value));
-  if (create_if_missing && DAG_SUCCESS != result)
-    std::cerr << "Couldn't find nor create tag named " << name << std::endl;
-
-  return retval;
+void DagMCmoab::tokenize(const std::string& str,
+                         std::vector<std::string>& tokens,
+                         const char* delimiters) const {
+  std::string::size_type last = str.find_first_not_of(delimiters, 0);
+  std::string::size_type pos  = str.find_first_of(delimiters, last);
+  if (std::string::npos == pos)
+    tokens.push_back(str);
+  else
+    while (std::string::npos != pos && std::string::npos != last) {
+      tokens.push_back(str.substr(last, pos - last));
+      last = str.find_first_not_of(delimiters, pos);
+      pos  = str.find_first_of(delimiters, last);
+      if (std::string::npos == pos)
+        pos = str.size();
+    }
 }
-
 
 } // namespace DAGMC

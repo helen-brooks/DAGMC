@@ -1,12 +1,7 @@
 #ifndef DAG_MESH_INTERFACE_HPP
 #define DAG_MESH_INTERFACE_HPP
 
-#include <memory>
-#include <map>
-#include <vector>
-#include <iostream>
-#include <string>
-#include <cstdint>
+#include "common.hpp"
 
 namespace DAGMC {
 class MeshInterface {
@@ -45,7 +40,13 @@ class MeshContainer {
   ~MeshContainer<MeshType>() {};
   virtual MeshType& mesh() = 0;
   virtual const MeshType& const_mesh() const = 0;
+  virtual MeshType* ptr() { return nullptr; };
+  virtual std::shared_ptr<MeshType> sptr() {
+    throw std::runtime_error("Mesh instance is not defined as a shared pointer !");
+    return nullptr;
+  }
   virtual bool isNull() { return false; };
+
 };
 
 #endif

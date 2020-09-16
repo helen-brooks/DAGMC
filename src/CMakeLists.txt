@@ -6,6 +6,12 @@ if (BUILD_TESTS)
   add_subdirectory(gtest)
 endif ()
 
+# Add currently self-isolated libmesh-dependent classes
+if(BUILD_LIBMESH)
+  add_subdirectory(mesh)
+  add_subdirectory(geom)
+endif()
+
 # Required libraries
 add_subdirectory(dagmc)
 add_subdirectory(pyne)
@@ -48,9 +54,3 @@ endif ()
 if (BUILD_OVERLAP_CHECK)
   add_subdirectory(overlap_check)
 endif ()
-
-# Add currently self-isolated libmesh-dependent classes
-if(BUILD_LIBMESH)
-  add_subdirectory(mesh)
-  add_subdirectory(geom)
-endif()

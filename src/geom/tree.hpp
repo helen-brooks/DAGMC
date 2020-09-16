@@ -1,8 +1,7 @@
 #ifndef DAG_TREE_HPP
 #define DAG_TREE_HPP
 
-#include <memory>
-#include <vector>
+#include "common.hpp"
 
 namespace DAGMC {
 

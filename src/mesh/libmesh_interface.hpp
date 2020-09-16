@@ -14,6 +14,7 @@ class ExternalMesh : public MeshContainer<libMesh::MeshBase> {
 
   libMesh::MeshBase& mesh() override { return _mesh; };
   const libMesh::MeshBase& const_mesh() const override { return _mesh; };
+  libMesh::MeshBase* ptr() override { return &_mesh; };
 
  private:
 
@@ -30,6 +31,8 @@ class InternalMesh : public MeshContainer<libMesh::MeshBase> {
 
   libMesh::MeshBase& mesh() override { return *meshPtr; };
   const libMesh::MeshBase& const_mesh() const override { return *meshPtr; };
+  libMesh::MeshBase* ptr() override { return meshPtr.get(); };
+  std::shared_ptr<libMesh::MeshBase> sptr() override { return meshPtr; };
   bool isNull() override { return (meshPtr == nullptr); };
 
  private:
