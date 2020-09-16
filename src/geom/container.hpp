@@ -178,8 +178,8 @@ class ElemConstItContainer : public ElemContainer {
   bool checkIfValid() const;
 
   // Contant iterators to contant elements
-  const const_element_iterator elBegin;
-  const const_element_iterator elEnd;
+  const_element_iterator elBegin;
+  const_element_iterator elEnd;
 
   // Save if the container is valid
   bool valid;
