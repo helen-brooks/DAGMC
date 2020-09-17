@@ -81,7 +81,9 @@ class MoabInterface : public MeshInterface {
   bool get_tag(std::string& tagname, Tag& tag);
   bool get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
                     const int num_handles, void* tag_data);
-  bool get_tag_data(Tag tag, EntityHandle eh, std::vector<std::string>& values);
+  bool get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
+                        const int num_handles, const void** tag_data, int* len);
+  bool get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values);
   bool get_tag_name(Tag tag, EntityHandle eh, std::string& name);
   bool get_group_name(EntityHandle group, std::string& name);
   bool get_entity_sets(EntityHandle group, Range& group_sets);
@@ -90,6 +92,8 @@ class MoabInterface : public MeshInterface {
 
   // Methods for setting metadata
   bool set_tag(Tag tag, EntityHandle eh, std::string& new_string);
+  bool set_tag_data(Tag tag, const EntityHandle* entityPtr,
+                    int num_handles, const void* const tag_data, int len);
 
   // Retrieve references to moab
   moab::Interface& moab() { return container->mesh(); };

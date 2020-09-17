@@ -268,7 +268,7 @@ int DagMCmoab::id_by_index(int dimension, int index) {
   if (!h)
     return 0;
 
-  // TO-DO should this throw if set_tag_data == false?
+  // TO-DO should this throw if get_tag_data returns false?
   int result = 0;
   mesh_interface->get_tag_data(GTT->get_gid_tag(), &h, 1, &result);
   return result;
@@ -406,9 +406,10 @@ ErrorCode DagMCmoab::detect_available_props(std::vector<std::string>& keywords_l
 ErrorCode DagMCmoab::append_packed_string(Tag tag, EntityHandle eh,
                                           std::string& new_string) {
 
-  // Fetch the existing string associated with this tag
-  std::string old_str;
-  if (!mesh_interface->get_tag_name(tag, eh, old_str)) {
+  // Fetch the existing data associated with this tag
+  const void* data;
+  int len;
+  if (!mesh_interface->get_tag_data_arr(tag, &eh, 1, &data, &len)) {
     ErrorCode rval = mesh_interface->code();
     // This is the first entry, and can be set directly
     if (rval == DAG_TAG_NOT_FOUND) {
@@ -421,22 +422,41 @@ ErrorCode DagMCmoab::append_packed_string(Tag tag, EntityHandle eh,
       return rval;
   }
 
+  // Upcast as char array
+  const char* str = static_cast<const char*>(data);
+
+  // Get length of new packed string
+  unsigned int tail_len = new_string.length() + 1;
+  int new_len = tail_len + len;
+
+  // Initialise a new char array
+  char* new_packed_string = new char[ new_len ];
+
+  // Copy the old string into new
+  memcpy(new_packed_string, str, len);
+
   // Append a new value for the property to the existing property string
-  std::stringstream new_ss;
-  new_ss << old_str << new_string;
-  std::string appended = new_ss.str();
+  memcpy(new_packed_string + len, new_string.c_str(), tail_len);
+
+  // Dowcast as void * to pass back to MOAB
+  data = new_packed_string;
 
   // Set new string
-  if (!mesh_interface->set_tag(tag, eh, appended)) {
+  bool tag_set = mesh_interface->set_tag_data(tag, &eh, 1, data, new_len);
+
+  // Deallocate memory for array created by new.
+  delete[] new_packed_string;
+
+  if (!tag_set) {
     return mesh_interface->code();
-  } else
-    return DAG_SUCCESS;
+  }
+  return DAG_SUCCESS;
 
 }
 
 ErrorCode DagMCmoab::unpack_packed_string(Tag tag, EntityHandle eh,
                                           std::vector< std::string >& values) {
-  if (!mesh_interface->get_tag_data(tag, eh, values)) {
+  if (!mesh_interface->get_tag_data_vec(tag, eh, values)) {
     return mesh_interface->code();
   }
   return DAG_SUCCESS;

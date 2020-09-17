@@ -157,33 +157,24 @@ bool MoabInterface::get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
 
 }
 
-bool MoabInterface::get_tag_data(Tag tag, EntityHandle eh, std::vector<std::string>& values) {
+bool MoabInterface::get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
+                                     const int num_handles, const void** data, int* len) {
 
-  // //  std::string str;
-  // const void* data;
-  // int len;
-  // rval = moab().tag_get_by_ptr(tag, &eh, 1, &data, &len);
+  rval = moab().tag_get_by_ptr(tag, entityPtr, num_handles, data, len);
+  return (rval == moab::MB_SUCCESS);
 
-  // if (moab::MB_SUCCESS != rval) return false;
+}
 
-  // const char* c_str = static_cast<const char*>(data);
-  // int idx = 0;
-  // while (idx < len) {
-  //   std::string item(c_str + idx);
-  //   values.push_back(item);
-  //   idx += item.length() + null_delimiter_length;
-  // }
-  // return true;
+bool MoabInterface::get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values) {
 
-
-  const void* p;
-  const char* str;
+  const void* data;
   int len;
-  rval = moab().tag_get_by_ptr(tag, &eh, 1, &p, &len);
-  if (rval != moab::MB_SUCCESS)
+  if (!get_tag_data_arr(tag, &eh, 1, &data, &len)) {
     return false;
+  }
 
-  str = static_cast<const char*>(p);
+  // Upcast as char array
+  const char* str = static_cast<const char*>(data);
   int idx = 0;
   while (idx < len) {
     std::string item(str + idx);
@@ -238,11 +229,18 @@ bool MoabInterface::set_tag(Tag tag, EntityHandle eh, std::string& new_string) {
 
   int len = new_string.length() + null_delimiter_length;
   const void* data = new_string.c_str();
-  rval = moab().tag_set_by_ptr(tag, &eh, 1, &data, &len);
-  return (rval == moab::MB_SUCCESS);
+  return set_tag_data(tag, &eh, 1, data, len);
 
 }
 
+bool MoabInterface::set_tag_data(Tag tag, const EntityHandle* entityPtr,
+                                 int num_handles, const void* const tag_data,
+                                 int len) {
+
+  rval = moab().tag_set_by_ptr(tag, entityPtr, num_handles, &tag_data, &len);
+  return (rval == moab::MB_SUCCESS);
+
+}
 
 // *****************************************************************************
 // PRIVATE METHODS
