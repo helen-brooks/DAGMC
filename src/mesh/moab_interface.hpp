@@ -71,12 +71,18 @@ class MoabInterface : public MeshInterface {
   MoabInterface(std::shared_ptr<moab::Interface> moabSharedPtrIn);
   ~MoabInterface() {};
 
+  void init();
+
   // Read and write to file
   bool load(std::string filename) override;
   bool write(std::string filename) override;
 
-  // Methods for fetching metadata
-  bool get_faceting_tol(double& facetingTolerance);
+  // Finish the setup of the geometry from an open fil
+  bool setup_geom();
+
+  // Methods for fetching and setting metadata
+  bool set_faceting_tol();
+  double get_faceting_tol() { return facetingTolerance; };
   bool get_group_handles(std::vector<EntityHandle>& group_handles);
   bool get_tag(std::string& tagname, Tag& tag);
   bool get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
@@ -100,6 +106,9 @@ class MoabInterface : public MeshInterface {
   moab::Interface* moab_ptr() { return container->ptr(); };
   std::shared_ptr<moab::Interface> moab_sptr() { return container->sptr(); };
 
+  // Return a copy of the topo tool
+  std::shared_ptr<GeomTopoTool> gtt() { return GTT; };
+
   // Return error code, but cast as DAGMC error code.
   ErrorCode code() { return ErrorCode(rval); };
 
@@ -115,6 +124,9 @@ class MoabInterface : public MeshInterface {
   // Container for the mesh
   std::shared_ptr<MeshContainer<moab::Interface> > container;
 
+  // Pointer to an instance of a GeomTopoTool
+  std::shared_ptr<GeomTopoTool> GTT;
+
   // Store MOAB return values
   moab::ErrorCode rval;
 
@@ -122,6 +134,8 @@ class MoabInterface : public MeshInterface {
   Tag facetingTolTag;
 
   const int null_delimiter_length;
+
+  double facetingTolerance;
 
 };
 

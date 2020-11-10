@@ -127,9 +127,6 @@ class DagMCmoab : public DagMCBase {
  private:
   ErrorCode setup_geometry(Range& surfs, Range& vols);
 
-  /** loading code shared by load_file and load_existing_contents */
-  ErrorCode finish_loading();
-
   /** \brief Wrapper around GTT->find_geomsets() */
   ErrorCode find_geomsets() {
     return ErrorCode(GTT->find_geomsets());
@@ -218,6 +215,10 @@ class DagMCmoab : public DagMCBase {
   /* SECTION IV: Handling DagMC settings */
  public:
 
+  /** retrieve faceting tolerance */
+  double faceting_tolerance() override {
+    return mesh_interface->get_faceting_tol();
+  };
   /** retrieve overlap thickness */
   double overlap_thickness() override;
   /** retrieve numerical precision */

@@ -109,8 +109,7 @@ class DagMCBase {
 
   virtual double overlap_thickness() = 0;
   virtual void set_overlap_thickness(double new_overlap_thickness) = 0;
-  /** retrieve faceting tolerance */
-  double faceting_tolerance() { return facetingTolerance; }
+  virtual double faceting_tolerance() = 0;
 
   // ***************************************************************************
   // SECTION V: Metadata handling
@@ -144,7 +143,7 @@ class DagMCBase {
   // ***************************************************************************
 
   std::unique_ptr<ErrorHandler> errHandler;
-  double facetingTolerance;
+
   /** empty synonym map to provide as a default argument to parse_properties() */
   static const std::map<std::string, std::string> no_synonyms;
 

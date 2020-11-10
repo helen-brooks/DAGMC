@@ -33,8 +33,8 @@ DagMCmoab::DagMCmoab(std::shared_ptr<Interface> mb_impl, double overlap_toleranc
   // Create an interface to MOAB
   mesh_interface = std::make_shared<MoabInterface>(mb_impl);
 
-  // make new GeomTopoTool and GeomQueryTool
-  GTT = std::make_shared<GeomTopoTool>(moab_instance(), false);
+  // Get the geometry topo tool
+  GTT  = mesh_interface->gtt();
 
 #ifdef DOUBLE_DOWN
   ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT));
@@ -54,8 +54,8 @@ DagMCmoab::DagMCmoab(Interface* mb_impl, double overlap_tolerance, double p_nume
   // Create an interface to MOAB
   mesh_interface = std::make_shared<MoabInterface>(mb_impl);
 
-  // make new GeomTopoTool and GeomQueryTool
-  GTT = std::make_shared<GeomTopoTool>(moab_instance(), false);
+  // Get the geometry topo tool
+  GTT  = mesh_interface->gtt();
 
 #ifdef DOUBLE_DOWN
   ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT));
@@ -76,14 +76,21 @@ ErrorCode DagMCmoab::load_file(const char* cfile) {
 
   if (!mesh_interface->load(std::string(cfile))) {
     return mesh_interface->code();
-  } else
-    return finish_loading();
+  }
+
+  return DAG_SUCCESS;
 
 }
 
 // helper function to load the existing contents of a MOAB instance into DAGMC
 ErrorCode DagMCmoab::load_existing_contents() {
-  return finish_loading();
+
+  if (!mesh_interface->setup_geom()) {
+    return mesh_interface->code();
+  }
+
+  return DAG_SUCCESS;
+
 }
 
 
@@ -158,21 +165,6 @@ ErrorCode DagMCmoab::setup_obbs() {
                             "Failed to build obb trees");
 #endif
   }
-  return DAG_SUCCESS;
-}
-
-// helper function to finish setting up required tags.
-ErrorCode DagMCmoab::finish_loading() {
-
-  if (!mesh_interface->get_faceting_tol(facetingTolerance)) {
-    return mesh_interface->code();
-  }
-
-  // initialize ray_tracer
-  std::cout << "Initializing the GeomQueryTool..." << std::endl;
-  errHandler->checkSetErr(GTT->find_geomsets(),
-                          "Failed to find the geometry sets");
-
   return DAG_SUCCESS;
 }
 

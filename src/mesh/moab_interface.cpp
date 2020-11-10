@@ -10,18 +10,29 @@ namespace DAGMC {
 
 MoabInterface::MoabInterface(moab::Interface* moabPtrIn) :
   null_delimiter_length(1) {
-  rval = moab::MB_SUCCESS;
   container = std::make_shared< ExternalMOAB >(moabPtrIn);
+  init();
 }
 
 MoabInterface::MoabInterface(std::shared_ptr<moab::Interface> moabSharedPtrIn) :
   null_delimiter_length(1) {
-  rval = moab::MB_SUCCESS;
   if (moabSharedPtrIn != nullptr) {
     container = std::make_shared< ExternalSharedMOAB >(moabSharedPtrIn);
   } else {
     container = std::make_shared< InternalMOAB >();
   }
+
+  init();
+}
+
+
+void MoabInterface::init() {
+
+  rval = moab::MB_SUCCESS;
+
+  // Create a topo tool
+  GTT = std::make_shared<GeomTopoTool>(moab_ptr(), false);
+
 }
 
 bool MoabInterface::load(std::string filename) {
@@ -58,7 +69,21 @@ bool MoabInterface::load(std::string filename) {
     return false;
   }
 
-  return true;
+  // Finish setup of faceting tolerance and topological heirarchy
+  return setup_geom();
+}
+
+bool MoabInterface::setup_geom() {
+
+  if (!set_faceting_tol()) {
+    return false;
+  }
+
+  std::cout << "Initializing the GeomTopoTool..." << std::endl;
+  rval = GTT->find_geomsets();
+
+  return (rval == moab::MB_SUCCESS);
+
 }
 
 bool MoabInterface::write(std::string filename) {
@@ -68,7 +93,7 @@ bool MoabInterface::write(std::string filename) {
 
 }
 
-bool MoabInterface::get_faceting_tol(double& facetingTolerance) {
+bool MoabInterface::set_faceting_tol() {
 
   nameTag = get_tag(NAME_TAG_NAME, NAME_TAG_SIZE, moab::MB_TAG_SPARSE,
                     moab::MB_TYPE_OPAQUE, NULL, false);
