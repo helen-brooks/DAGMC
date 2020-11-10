@@ -129,26 +129,11 @@ ErrorCode DagMCmoab::init_OBBTree() {
 // setups of the indices for the problem, builds a list of surface and volumes
 // indices
 ErrorCode DagMCmoab::setup_indices() {
-  Range surfs, vols;
-  errHandler->checkSetErr(setup_geometry(surfs, vols), "Failed to setup geometry");
-  // build the various index vectors used for efficiency
-  errHandler->checkSetErr(build_indices(surfs, vols), "Failed to build surface/volume indices");
 
-  return errHandler->code();
-}
-
-// gets the entity sets tagged with geomtag 2 and 3
-// surfaces and volumes respectively
-ErrorCode DagMCmoab::setup_geometry(Range& surfs, Range& vols) {
-
-  // get all surfaces
-  errHandler->checkSetErr(GTT->get_gsets_by_dimension(2, surfs),
-                          "Could not get surfaces from GTT");
-
-  // get all volumes
-  errHandler->checkSetErr(GTT->get_gsets_by_dimension(3, vols),
-                          "Could not get volumes from GTT");
-
+  if (!mesh_interface->setup_indices()) {
+    errHandler->checkSetErr(mesh_interface->code(),
+                            "Failed to build surface/volume indices");
+  }
   return DAG_SUCCESS;
 }
 
@@ -270,52 +255,6 @@ int DagMCmoab::get_entity_id(EntityHandle this_ent) {
   return GTT->global_id(this_ent);
 }
 
-ErrorCode DagMCmoab::build_indices(Range& surfs, Range& vols) {
-
-  if (surfs.size() == 0 || vols.size() == 0) {
-    std::cout << "Volumes or Surfaces not found" << std::endl;
-    return  DAG_ENTITY_NOT_FOUND;
-  }
-  setOffset = std::min(*surfs.begin(), *vols.begin());
-
-  // surf/vol offsets are just first handles
-  EntityHandle tmp_offset = std::max(surfs.back(), vols.back());
-
-  // set size
-  entIndices.resize(tmp_offset - setOffset + 1);
-
-  // store surf/vol handles lists (surf/vol by index) and
-  // index by handle lists
-  surf_handles().resize(surfs.size() + 1);
-  std::vector<EntityHandle>::iterator iter = surf_handles().begin();
-
-  // MCNP wants a 1-based index but C++ has a 0-based index. So we need to set
-  // the first value to 0 and then start at the next position in the vector
-  // (iter++) thereafter.
-  *(iter++) = 0;
-  std::copy(surfs.begin(), surfs.end(), iter);
-  int idx = 1;
-  for (Range::iterator rit = surfs.begin(); rit != surfs.end(); ++rit)
-    entIndices[*rit - setOffset] = idx++;
-
-  vol_handles().resize(vols.size() + 1);
-  iter = vol_handles().begin();
-
-  // MCNP wants a 1-based index but C++ has a 0-based index. So we need to set
-  // the first value to 0 and then start at the next position in the vector
-  // (iter++) thereafter.
-  *(iter++) = 0;
-  std::copy(vols.begin(), vols.end(), iter);
-  idx = 1;
-  for (Range::iterator rit = vols.begin(); rit != vols.end(); ++rit)
-    entIndices[*rit - setOffset] = idx++;
-
-  // Get group handles
-  if (!mesh_interface->get_group_handles(group_handles())) {
-    return mesh_interface->code();
-  } else
-    return DAG_SUCCESS;
-}
 
 // *****************************************************************************
 // SECTION IV

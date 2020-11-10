@@ -77,8 +77,9 @@ class MoabInterface : public MeshInterface {
   bool load(std::string filename) override;
   bool write(std::string filename) override;
 
-  // Finish the setup of the geometry from an open fil
+  // Finish the setup of the geometry from an open file
   bool setup_geom();
+  bool setup_indices();
 
   // Methods for fetching and setting metadata
   bool set_faceting_tol();
@@ -116,7 +117,39 @@ class MoabInterface : public MeshInterface {
   // To-do: what is this for?
   Tag name_tag() { return nameTag; };
 
+
+  std::vector<EntityHandle>& surf_handles() {
+    return entHandles[surfs_handle_idx];
+  };
+  std::vector<EntityHandle>& vol_handles() {
+    return entHandles[vols_handle_idx];
+  };
+  std::vector<EntityHandle>& group_handles() {
+    return entHandles[groups_handle_idx];
+  };
+
+
+  /** map from dimension & base-1 ordinal index to EntityHandle */
+  EntityHandle entity_by_index(int dimension, int index);
+
+  /** PPHW: Missing dim & global ID ==> base-1 ordinal index */
+  /** map from EntityHandle to base-1 ordinal index */
+  int index_by_handle(EntityHandle handle);
+
+  /** \brief get number of geometric sets corresponding to geometry of specified dimension
+   *
+   * For a given dimension (e.g. dimension=3 for volumes, dimension=2 for surfaces)
+   * return the number of entities of that dimension
+   *\param dimension the dimensionality of the entities in question
+  *\return integer number of entities of that dimension
+  */
+  unsigned int num_entities(int dimension);
+
+
  private:
+
+  bool build_indices(Range& surfs, Range& vols);
+
 
   Tag get_tag(const char* name, int size, TagType store, DataType type,
               const void* def_value = NULL, bool create_if_missing = true);
@@ -135,9 +168,40 @@ class MoabInterface : public MeshInterface {
 
   const int null_delimiter_length;
 
+  static const int vertex_handle_idx = 0;
+  static const int curve_handle_idx = 1;
+  static const int surfs_handle_idx = 2;
+  static const int vols_handle_idx = 3;
+  static const int groups_handle_idx = 4;
+
   double facetingTolerance;
 
+  /** store some lists indexed by handle */
+  std::vector<EntityHandle> entHandles[5];
+
+  /** lowest-valued handle among entity sets representing surfs and vols */
+  EntityHandle setOffset;
+
+  /** entity index (contiguous 1-N indices); indexed like rootSets */
+  std::vector<int> entIndices;
+
 };
+
+
+inline EntityHandle MoabInterface::entity_by_index(int dimension, int index) {
+  assert(2 <= dimension && 3 >= dimension && (unsigned)index < entHandles[dimension].size());
+  return entHandles[dimension][index];
+}
+
+inline int MoabInterface::index_by_handle(EntityHandle handle) {
+  assert(handle - setOffset < entIndices.size());
+  return entIndices[handle - setOffset];
+}
+
+inline unsigned int MoabInterface::num_entities(int dimension) {
+  assert(vertex_handle_idx <= dimension && groups_handle_idx >= dimension);
+  return entHandles[dimension].size() - 1;
+}
 
 }
 

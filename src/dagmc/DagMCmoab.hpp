@@ -17,12 +17,6 @@ struct DagmcVolData {
 
 namespace DAGMC {
 
-static const int vertex_handle_idx = 0;
-static const int curve_handle_idx = 1;
-static const int surfs_handle_idx = 2;
-static const int vols_handle_idx = 3;
-static const int groups_handle_idx = 4;
-
 class MoabErrHandler : public ErrorHandler {
  public:
   MoabErrHandler() {};
@@ -125,7 +119,6 @@ class DagMCmoab : public DagMCBase {
   ErrorCode setup_indices() override;
 
  private:
-  ErrorCode setup_geometry(Range& surfs, Range& vols);
 
   /** \brief Wrapper around GTT->find_geomsets() */
   ErrorCode find_geomsets() {
@@ -207,10 +200,6 @@ class DagMCmoab : public DagMCBase {
   *\return integer number of entities of that dimension
   */
   unsigned int num_entities(int dimension) override;
-
- private:
-  /** build internal index vectors that speed up handle-by-id, etc. */
-  ErrorCode build_indices(Range& surfs, Range& vols);
 
   /* SECTION IV: Handling DagMC settings */
  public:
@@ -359,13 +348,13 @@ class DagMCmoab : public DagMCBase {
                 const char* delimiters = "_") const;
 
   std::vector<EntityHandle>& surf_handles() {
-    return entHandles[surfs_handle_idx];
+    return mesh_interface->surf_handles();
   };
   std::vector<EntityHandle>& vol_handles() {
-    return entHandles[vols_handle_idx];
+    return mesh_interface->vol_handles();
   };
   std::vector<EntityHandle>& group_handles() {
-    return entHandles[groups_handle_idx];
+    return mesh_interface->group_handles();
   };
 
   // ***************************************************************************
@@ -411,10 +400,6 @@ class DagMCmoab : public DagMCBase {
 
   std::unique_ptr<RayTracer> ray_tracer;
 
-  /** lowest-valued handle among entity sets representing surfs and vols */
-  EntityHandle setOffset;
-  /** entity index (contiguous 1-N indices); indexed like rootSets */
-  std::vector<int> entIndices;
   /** corresponding geometric entities; also indexed like rootSets */
   std::vector<RefEntity*> geomEntities;
 
@@ -430,24 +415,19 @@ class DagMCmoab : public DagMCBase {
 
   /** map from the canonical property names to the tags representing them */
   std::map<std::string, Tag> property_tagmap;
-  /** store some lists indexed by handle */
-  std::vector<EntityHandle> entHandles[5];
 
 }; // End DagMC class definition
 
 inline EntityHandle DagMCmoab::entity_by_index(int dimension, int index) {
-  assert(2 <= dimension && 3 >= dimension && (unsigned)index < entHandles[dimension].size());
-  return entHandles[dimension][index];
+  return mesh_interface->entity_by_index(dimension, index);
 }
 
 inline int DagMCmoab::index_by_handle(EntityHandle handle) {
-  assert(handle - setOffset < entIndices.size());
-  return entIndices[handle - setOffset];
+  return mesh_interface->index_by_handle(handle);
 }
 
 inline unsigned int DagMCmoab::num_entities(int dimension) {
-  assert(vertex_handle_idx <= dimension && groups_handle_idx >= dimension);
-  return entHandles[dimension].size() - 1;
+  return mesh_interface->num_entities(dimension);
 }
 
 inline ErrorCode DagMCmoab::getobb(EntityHandle volume, double minPt[3], double maxPt[3]) {
