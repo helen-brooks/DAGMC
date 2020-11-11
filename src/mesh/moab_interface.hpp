@@ -84,23 +84,17 @@ class MoabInterface : public MeshInterface {
   // Methods for fetching and setting metadata
   bool set_faceting_tol();
   double get_faceting_tol() { return facetingTolerance; };
-  bool get_group_handles(std::vector<EntityHandle>& group_handles);
-  bool get_tag(std::string& tagname, Tag& tag);
-  bool get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
-                    const int num_handles, void* tag_data);
-  bool get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
-                        const int num_handles, const void** tag_data, int* len);
+
+  // Return a map of tags given property names
+  bool set_tagmap(std::set< std::string >& prop_names, std::map<std::string, Tag>& property_tagmap);
+  bool append_group_properties(const char* delimiters, std::map<std::string, Tag>& property_tagmap);
+  bool get_keywords(std::vector<std::string>& keywords_list, const char* delimiters);
+
+  // TODO factorise further to make these methods private.
   bool get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values);
   bool get_tag_name(Tag tag, EntityHandle eh, std::string& name);
-  bool get_group_name(EntityHandle group, std::string& name);
-  bool get_entity_sets(EntityHandle group, Range& group_sets);
   bool get_tagged_entity_sets(EntityHandle group, Tag tag, Range& group_sets);
   bool get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags, Range& group_sets);
-
-  // Methods for setting metadata
-  bool set_tag(Tag tag, EntityHandle eh, std::string& new_string);
-  bool set_tag_data(Tag tag, const EntityHandle* entityPtr,
-                    int num_handles, const void* const tag_data, int len);
 
   // Retrieve references to moab
   moab::Interface& moab() { return container->mesh(); };
@@ -118,16 +112,7 @@ class MoabInterface : public MeshInterface {
   Tag name_tag() { return nameTag; };
 
 
-  std::vector<EntityHandle>& surf_handles() {
-    return entHandles[surfs_handle_idx];
-  };
-  std::vector<EntityHandle>& vol_handles() {
-    return entHandles[vols_handle_idx];
-  };
-  std::vector<EntityHandle>& group_handles() {
-    return entHandles[groups_handle_idx];
-  };
-
+  // Indexing methods
 
   /** map from dimension & base-1 ordinal index to EntityHandle */
   EntityHandle entity_by_index(int dimension, int index);
@@ -135,6 +120,9 @@ class MoabInterface : public MeshInterface {
   /** PPHW: Missing dim & global ID ==> base-1 ordinal index */
   /** map from EntityHandle to base-1 ordinal index */
   int index_by_handle(EntityHandle handle);
+
+  /** map from dimension & base-1 ordinal index to global ID */
+  int id_by_index(int dimension, int index);
 
   /** \brief get number of geometric sets corresponding to geometry of specified dimension
    *
@@ -148,11 +136,53 @@ class MoabInterface : public MeshInterface {
 
  private:
 
+  /** a common type within the property and group name functions */
+  typedef std::map<std::string, std::string> prop_map;
+
   bool build_indices(Range& surfs, Range& vols);
 
+  /** \brief Parse a group name into a set of key:value pairs */
+  bool parse_group_name(EntityHandle group_set, prop_map& result, const char* delimiters = "_");
+
+  /** \brief tokenize the metadata stored in group names
+  * - basically borrowed from ReadCGM.cpp.
+  * Called by parse_group_name
+  * */
+  void tokenize(const std::string& str, std::vector<std::string>& tokens,
+                const char* delimiters = "_") const;
+
+  /** Add a string value to a property tag for a given entity */
+  bool append_packed_string(Tag, EntityHandle, std::string&);
+
+  // Methods for setting metadata
+  bool set_tag(Tag tag, EntityHandle eh, std::string& new_string);
+  bool set_tag_data(Tag tag, const EntityHandle* entityPtr,
+                    int num_handles, const void* const tag_data, int len);
+
+  // Methods for fetching metadata values
+  bool get_group_handles(std::vector<EntityHandle>& group_handles);
+  bool get_tag(std::string& tagname, Tag& tag);
+  bool get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
+                    const int num_handles, void* tag_data);
+  bool get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
+                        const int num_handles, const void** tag_data, int* len);
+  bool get_group_name(EntityHandle group, std::string& name);
+  bool get_entity_sets(EntityHandle group, Range& group_sets);
 
   Tag get_tag(const char* name, int size, TagType store, DataType type,
               const void* def_value = NULL, bool create_if_missing = true);
+
+
+  // Convenience methods for accessing handles
+  std::vector<EntityHandle>& surf_handles() {
+    return entHandles[surfs_handle_idx];
+  };
+  std::vector<EntityHandle>& vol_handles() {
+    return entHandles[vols_handle_idx];
+  };
+  std::vector<EntityHandle>& group_handles() {
+    return entHandles[groups_handle_idx];
+  };
 
   // Container for the mesh
   std::shared_ptr<MeshContainer<moab::Interface> > container;

@@ -153,6 +153,17 @@ bool MoabInterface::build_indices(Range& surfs, Range& vols) {
 
 }
 
+int MoabInterface::id_by_index(int dimension, int index) {
+  EntityHandle h = entity_by_index(dimension, index);
+  if (!h)
+    return 0;
+
+  // TO-DO should this throw if get_tag_data returns false?
+  int result = 0;
+  get_tag_data(GTT->get_gid_tag(), &h, 1, &result);
+  return result;
+}
+
 
 bool MoabInterface::write(std::string filename) {
 
@@ -203,6 +214,175 @@ bool MoabInterface::set_faceting_tol() {
   std::cout << "Using faceting tolerance: " << facetingTolerance << std::endl;
   return true;
 }
+
+bool MoabInterface::set_tagmap(std::set< std::string >& prop_names, std::map<std::string, Tag>& property_tagmap) {
+
+  for (auto prop_name : prop_names) {
+    std::string tagname("DAGMCPROP_");
+    tagname += prop_name;
+
+    Tag new_tag;
+    if (!get_tag(tagname, new_tag)) {
+      return false;
+    }
+    property_tagmap[prop_name] = new_tag;
+
+  }
+
+  return true;
+}
+
+bool MoabInterface::append_group_properties(const char* delimiters, std::map<std::string, Tag>& property_tagmap) {
+
+  for (auto& group : group_handles()) {
+
+    prop_map properties;
+    if (!parse_group_name(group, properties, delimiters)) {
+      if (rval == moab::MB_TAG_NOT_FOUND) {
+        // This is OK, reset rval.
+        rval = moab::MB_SUCCESS;
+        continue;
+      } else
+        return false;
+    }
+
+    Range group_sets;
+    if (!get_entity_sets(group, group_sets))
+      return false;
+    else if (group_sets.empty())
+      continue;
+
+    for (auto& prop : properties) {
+      std::string groupkey = prop.first;
+      std::string groupval = prop.second;
+
+      if (property_tagmap.find(groupkey) != property_tagmap.end()) {
+        Tag proptag = property_tagmap[groupkey];
+        for (auto& groupset : group_sets) {
+          if (!append_packed_string(proptag, groupset, groupval))
+            return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+
+bool MoabInterface::parse_group_name(EntityHandle group_set, prop_map& result,
+                                     const char* delimiters) {
+
+  std::string group_name;
+  if (!get_group_name(group_set, group_name))
+    return false;
+
+  std::vector< std::string > group_tokens;
+  tokenize(group_name, group_tokens, delimiters);
+
+  // iterate over all the keyword positions
+  // keywords are even indices, their values (optional) are odd indices
+  for (unsigned int i = 0; i < group_tokens.size(); i += 2) {
+    std::string groupkey = group_tokens[i];
+    std::string groupval;
+    if (i < group_tokens.size() - 1)
+      groupval = group_tokens[i + 1];
+    result[groupkey] = groupval;
+  }
+
+  return true;
+}
+
+bool MoabInterface::get_keywords(std::vector<std::string>& keywords_list, const char* delimiters) {
+
+  std::set< std::string > keywords;
+  for (auto group : group_handles()) {
+
+    std::map< std::string, std::string > properties;
+    if (!parse_group_name(group, properties, delimiters)) {
+      if (rval == moab::MB_TAG_NOT_FOUND) {
+        // This is OK, reset rval.
+        rval = moab::MB_SUCCESS;
+        continue;
+      } else
+        return rval;
+    }
+
+    for (auto& prop : properties) {
+      keywords.insert(prop.first);
+    }
+  }
+  keywords_list.assign(keywords.begin(), keywords.end());
+  return true;
+}
+
+void MoabInterface::tokenize(const std::string& str,
+                             std::vector<std::string>& tokens,
+                             const char* delimiters) const {
+  std::string::size_type last = str.find_first_not_of(delimiters, 0);
+  std::string::size_type pos  = str.find_first_of(delimiters, last);
+  if (std::string::npos == pos)
+    tokens.push_back(str);
+  else
+    while (std::string::npos != pos && std::string::npos != last) {
+      tokens.push_back(str.substr(last, pos - last));
+      last = str.find_first_not_of(delimiters, pos);
+      pos  = str.find_first_of(delimiters, last);
+      if (std::string::npos == pos)
+        pos = str.size();
+    }
+}
+
+// TODO improve this C-style code...
+bool MoabInterface::append_packed_string(Tag tag, EntityHandle eh,
+                                         std::string& new_string) {
+
+  // Fetch the existing data associated with this tag
+  const void* data;
+  int len;
+  if (!get_tag_data_arr(tag, &eh, 1, &data, &len)) {
+
+    // This is the first entry, and can be set directly
+    if (rval == moab::MB_TAG_NOT_FOUND) {
+      // This is OK, reset rval.
+      rval = moab::MB_SUCCESS;
+      return set_tag(tag, eh, new_string);
+    } else
+      return false;
+  }
+
+  // Upcast as char array
+  const char* str = static_cast<const char*>(data);
+
+  // Get length of new packed string
+  unsigned int tail_len = new_string.length() + 1;
+  int new_len = tail_len + len;
+
+  // Initialise a new char array
+  char* new_packed_string = new char[ new_len ];
+
+  // Copy the old string into new
+  memcpy(new_packed_string, str, len);
+
+  // Append a new value for the property to the existing property string
+  memcpy(new_packed_string + len, new_string.c_str(), tail_len);
+
+  // Dowcast as void * to pass back to MOAB
+  data = new_packed_string;
+
+  // Set new string
+  bool tag_set = set_tag_data(tag, &eh, 1, data, new_len);
+
+  // Deallocate memory for array created by new.
+  delete[] new_packed_string;
+
+  if (!tag_set)
+    return false;
+
+  return true;
+
+}
+
 
 bool MoabInterface::get_group_handles(std::vector<EntityHandle>& group_handles) {
 

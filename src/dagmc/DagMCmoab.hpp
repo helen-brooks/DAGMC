@@ -300,10 +300,6 @@ class DagMCmoab : public DagMCBase {
 
  private:
 
-  // Typedefs
-  /** a common type within the property and group name functions */
-  typedef std::map<std::string, std::string> prop_map;
-
   /** Return true if a volume or surface has the named property set upon it
        *
        *  @param eh The entity handle to query
@@ -327,35 +323,6 @@ class DagMCmoab : public DagMCBase {
   ErrorCode entities_by_property(const std::string& prop, std::vector<EntityHandle>& return_list,
                                  int dimension = 0, const std::string* value = NULL);
 
-
-  /** Convert a property tag's value on a handle to a list of strings */
-  ErrorCode unpack_packed_string(Tag tag, EntityHandle eh,
-                                 std::vector< std::string >& values);
-
-  /** Add a string value to a property tag for a given entity */
-  ErrorCode append_packed_string(Tag, EntityHandle, std::string&);
-
-  /** \brief Parse a group name into a set of key:value pairs
-  * Called by detect_available_props, parse_properties
-  */
-  ErrorCode parse_group_name(EntityHandle group_set, prop_map& result, const char* delimiters = "_");
-
-  /** \brief tokenize the metadata stored in group names
-  * - basically borrowed from ReadCGM.cpp.
-  * Called by parse_group_name
-  * */
-  void tokenize(const std::string& str, std::vector<std::string>& tokens,
-                const char* delimiters = "_") const;
-
-  std::vector<EntityHandle>& surf_handles() {
-    return mesh_interface->surf_handles();
-  };
-  std::vector<EntityHandle>& vol_handles() {
-    return mesh_interface->vol_handles();
-  };
-  std::vector<EntityHandle>& group_handles() {
-    return mesh_interface->group_handles();
-  };
 
   // ***************************************************************************
   // SECTION VI: Other
@@ -424,6 +391,10 @@ inline EntityHandle DagMCmoab::entity_by_index(int dimension, int index) {
 
 inline int DagMCmoab::index_by_handle(EntityHandle handle) {
   return mesh_interface->index_by_handle(handle);
+}
+
+inline int DagMCmoab::id_by_index(int dimension, int index) {
+  return mesh_interface->id_by_index(dimension, index);
 }
 
 inline unsigned int DagMCmoab::num_entities(int dimension) {

@@ -93,8 +93,7 @@ ErrorCode DagMCmoab::load_existing_contents() {
 
 }
 
-
-// setup the implicit compliment
+// Set up the implicit complement
 ErrorCode DagMCmoab::setup_impl_compl() {
   // If it doesn't already exist, create implicit complement
   // Create data structures for implicit complement
@@ -152,7 +151,6 @@ ErrorCode DagMCmoab::setup_obbs() {
   }
   return DAG_SUCCESS;
 }
-
 
 // *****************************************************************************
 // SECTION II: Fundamental Geometry Operations/Queries
@@ -232,6 +230,10 @@ ErrorCode DagMCmoab::next_vol(EntityHandle surface, EntityHandle old_volume,
   return ErrorCode(GTT->next_vol(surface, old_volume, new_volume));
 }
 
+bool DagMCmoab::is_implicit_complement(EntityHandle volume) {
+  return GTT->is_implicit_complement(volume);
+}
+
 // *****************************************************************************
 // SECTION III
 // *****************************************************************************
@@ -240,21 +242,9 @@ EntityHandle DagMCmoab::entity_by_id(int dimension, int id) {
   return GTT->entity_by_id(dimension, id);
 }
 
-int DagMCmoab::id_by_index(int dimension, int index) {
-  EntityHandle h = entity_by_index(dimension, index);
-  if (!h)
-    return 0;
-
-  // TO-DO should this throw if get_tag_data returns false?
-  int result = 0;
-  mesh_interface->get_tag_data(GTT->get_gid_tag(), &h, 1, &result);
-  return result;
-}
-
 int DagMCmoab::get_entity_id(EntityHandle this_ent) {
   return GTT->global_id(this_ent);
 }
-
 
 // *****************************************************************************
 // SECTION IV
@@ -290,104 +280,10 @@ ErrorCode DagMCmoab::write_mesh(const char* ffile) {
 // SECTION V: Metadata handling
 // *****************************************************************************
 
-ErrorCode DagMCmoab::parse_group_name(EntityHandle group_set, prop_map& result,
-                                      const char* delimiters) {
-
-  std::string group_name;
-  if (!mesh_interface->get_group_name(group_set, group_name)) {
-    return mesh_interface->code();
-  }
-
-  std::vector< std::string > group_tokens;
-  tokenize(group_name, group_tokens, delimiters);
-
-  // iterate over all the keyword positions
-  // keywords are even indices, their values (optional) are odd indices
-  for (unsigned int i = 0; i < group_tokens.size(); i += 2) {
-    std::string groupkey = group_tokens[i];
-    std::string groupval;
-    if (i < group_tokens.size() - 1)
-      groupval = group_tokens[i + 1];
-    result[groupkey] = groupval;
-  }
-  return DAG_SUCCESS;
-}
-
 ErrorCode DagMCmoab::detect_available_props(std::vector<std::string>& keywords_list,
                                             const char* delimiters) {
-  ErrorCode rval;
-  std::set< std::string > keywords;
-  for (auto group : group_handles()) {
 
-    std::map< std::string, std::string > properties;
-    rval = parse_group_name(group, properties, delimiters);
-    if (rval == DAG_TAG_NOT_FOUND)
-      continue;
-    else if (rval != DAG_SUCCESS)
-      return rval;
-
-    for (auto& prop : properties) {
-      keywords.insert(prop.first);
-    }
-  }
-  keywords_list.assign(keywords.begin(), keywords.end());
-  return DAG_SUCCESS;
-}
-
-ErrorCode DagMCmoab::append_packed_string(Tag tag, EntityHandle eh,
-                                          std::string& new_string) {
-
-  // Fetch the existing data associated with this tag
-  const void* data;
-  int len;
-  if (!mesh_interface->get_tag_data_arr(tag, &eh, 1, &data, &len)) {
-    ErrorCode rval = mesh_interface->code();
-    // This is the first entry, and can be set directly
-    if (rval == DAG_TAG_NOT_FOUND) {
-      if (!mesh_interface->set_tag(tag, eh, new_string)) {
-        return mesh_interface->code();
-      } else {
-        return DAG_SUCCESS;
-      }
-    } else
-      return rval;
-  }
-
-  // Upcast as char array
-  const char* str = static_cast<const char*>(data);
-
-  // Get length of new packed string
-  unsigned int tail_len = new_string.length() + 1;
-  int new_len = tail_len + len;
-
-  // Initialise a new char array
-  char* new_packed_string = new char[ new_len ];
-
-  // Copy the old string into new
-  memcpy(new_packed_string, str, len);
-
-  // Append a new value for the property to the existing property string
-  memcpy(new_packed_string + len, new_string.c_str(), tail_len);
-
-  // Dowcast as void * to pass back to MOAB
-  data = new_packed_string;
-
-  // Set new string
-  bool tag_set = mesh_interface->set_tag_data(tag, &eh, 1, data, new_len);
-
-  // Deallocate memory for array created by new.
-  delete[] new_packed_string;
-
-  if (!tag_set) {
-    return mesh_interface->code();
-  }
-  return DAG_SUCCESS;
-
-}
-
-ErrorCode DagMCmoab::unpack_packed_string(Tag tag, EntityHandle eh,
-                                          std::vector< std::string >& values) {
-  if (!mesh_interface->get_tag_data_vec(tag, eh, values)) {
+  if (!mesh_interface->get_keywords(keywords_list, delimiters)) {
     return mesh_interface->code();
   }
   return DAG_SUCCESS;
@@ -408,55 +304,32 @@ ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
 
   // The set of all canonical property names
   std::set< std::string > prop_names;
-  for (prop_map::iterator i = keyword_map.begin();
+  for (auto i = keyword_map.begin();
        i != keyword_map.end(); ++i) {
     prop_names.insert((*i).second);
   }
 
+  // // Now add the requested keywords
+  // for (auto key : keywords){
+  //   keyword_map[key] = key;
+  // }
+
+  // // Create the set of all canonical property names
+  // std::set< std::string > prop_names;
+  // for (auto keypair : keyword_map) {
+  //   prop_names.insert(keypair.second);
+  // }
+
   // Set up DagMC's property tags based on what's been requested
-  for (std::set<std::string>::iterator i = prop_names.begin();
-       i != prop_names.end(); ++i) {
-    std::string tagname("DAGMCPROP_");
-    tagname += (*i);
-
-    Tag new_tag;
-    if (!mesh_interface->get_tag(tagname, new_tag)) {
-      return mesh_interface->code();
-    }
-    property_tagmap[(*i)] = new_tag;
-
+  if (!mesh_interface->set_tagmap(prop_names, property_tagmap)) {
+    return mesh_interface->code();
   }
 
-  // Now that the keywords and tags are ready, iterate over all the actual geometry groups
-  for (auto& group : group_handles()) {
-
-    prop_map properties;
-    ErrorCode rval = parse_group_name(group, properties, delimiters);
-    if (rval == DAG_TAG_NOT_FOUND)
-      continue;
-    else if (rval != DAG_SUCCESS)
-      return rval;
-
-    Range group_sets;
-    if (!mesh_interface->get_entity_sets(group, group_sets))
-      return mesh_interface->code();
-    else if (group_sets.empty())
-      continue;
-
-    for (auto& prop : properties) {
-      std::string groupkey = prop.first;
-      std::string groupval = prop.second;
-
-      if (property_tagmap.find(groupkey) != property_tagmap.end()) {
-        Tag proptag = property_tagmap[groupkey];
-        for (auto& groupset : group_sets) {
-          rval = append_packed_string(proptag, groupset, groupval);
-          if (DAG_SUCCESS != rval)
-            return rval;
-        }
-      }
-    }
+  // Now that tags are ready, append moab's group properties
+  if (!mesh_interface->append_group_properties(delimiters, property_tagmap)) {
+    return mesh_interface->code();
   }
+
   return DAG_SUCCESS;
 }
 
@@ -484,7 +357,11 @@ ErrorCode DagMCmoab::prop_values(EntityHandle eh, const std::string& prop,
   }
   Tag proptag = (*it).second;
 
-  return unpack_packed_string(proptag, eh, values);
+  // Convert a property tag's value on a handle to a list of strings
+  if (!mesh_interface->get_tag_data_vec(proptag, eh, values)) {
+    return mesh_interface->code();
+  }
+  return DAG_SUCCESS;
 
 }
 
@@ -504,7 +381,7 @@ bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
 
 // TO-DO: figure out where this are used
 ErrorCode DagMCmoab::get_all_prop_values(const std::string& prop, std::vector<std::string>& return_list) {
-  ErrorCode rval;
+
   std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
   if (it == property_tagmap.end()) {
     return DAG_TAG_NOT_FOUND;
@@ -520,7 +397,7 @@ ErrorCode DagMCmoab::get_all_prop_values(const std::string& prop, std::vector<st
   std::set<std::string> unique_values;
   for (auto& entity : all_ents) {
     std::vector<std::string> values;
-    rval = prop_values(entity, prop, values);
+    ErrorCode rval = rval = prop_values(entity, prop, values);
     if (DAG_SUCCESS != rval)
       return rval;
     unique_values.insert(values.begin(), values.end());
@@ -568,25 +445,5 @@ ErrorCode DagMCmoab::entities_by_property(const std::string& prop,
   return DAG_SUCCESS;
 }
 
-bool DagMCmoab::is_implicit_complement(EntityHandle volume) {
-  return GTT->is_implicit_complement(volume);
-}
-
-void DagMCmoab::tokenize(const std::string& str,
-                         std::vector<std::string>& tokens,
-                         const char* delimiters) const {
-  std::string::size_type last = str.find_first_not_of(delimiters, 0);
-  std::string::size_type pos  = str.find_first_of(delimiters, last);
-  if (std::string::npos == pos)
-    tokens.push_back(str);
-  else
-    while (std::string::npos != pos && std::string::npos != last) {
-      tokens.push_back(str.substr(last, pos - last));
-      last = str.find_first_not_of(delimiters, pos);
-      pos  = str.find_first_of(delimiters, last);
-      if (std::string::npos == pos)
-        pos = str.size();
-    }
-}
 
 } // namespace DAGMC
