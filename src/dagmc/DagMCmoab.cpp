@@ -109,7 +109,7 @@ ErrorCode DagMCmoab::setup_impl_compl() {
 ErrorCode DagMCmoab::init_OBBTree() {
 
   // find all geometry sets
-  errHandler->checkSetErr(find_geomsets(),
+  errHandler->checkSetErr(GTT->find_geomsets(),
                           "Could not find the geometry sets");
 
   // implicit complement
@@ -297,36 +297,19 @@ ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
   // Master keyword map, mapping user-set words in cubit to canonical property names
   std::map< std::string, std::string > keyword_map(keyword_synonyms);
 
-  for (std::vector<std::string>::const_iterator i = keywords.begin();
-       i != keywords.end(); ++i) {
-    keyword_map[*i] = *i;
+  // Now add the requested keywords
+  for (auto key : keywords) {
+    keyword_map[key] = key;
   }
 
-  // The set of all canonical property names
+  // Create the set of all canonical property names
   std::set< std::string > prop_names;
-  for (auto i = keyword_map.begin();
-       i != keyword_map.end(); ++i) {
-    prop_names.insert((*i).second);
+  for (auto keypair : keyword_map) {
+    prop_names.insert(keypair.second);
   }
-
-  // // Now add the requested keywords
-  // for (auto key : keywords){
-  //   keyword_map[key] = key;
-  // }
-
-  // // Create the set of all canonical property names
-  // std::set< std::string > prop_names;
-  // for (auto keypair : keyword_map) {
-  //   prop_names.insert(keypair.second);
-  // }
 
   // Set up DagMC's property tags based on what's been requested
-  if (!mesh_interface->set_tagmap(prop_names, property_tagmap)) {
-    return mesh_interface->code();
-  }
-
-  // Now that tags are ready, append moab's group properties
-  if (!mesh_interface->append_group_properties(delimiters, property_tagmap)) {
+  if (!mesh_interface->update_properties(prop_names, delimiters)) {
     return mesh_interface->code();
   }
 
@@ -335,13 +318,7 @@ ErrorCode DagMCmoab::parse_properties(const std::vector<std::string>& keywords,
 
 ErrorCode DagMCmoab::prop_value(EntityHandle eh, const std::string& prop, std::string& value) {
 
-  std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
-  if (it == property_tagmap.end()) {
-    return DAG_TAG_NOT_FOUND;
-  }
-  Tag proptag = (*it).second;
-
-  if (!mesh_interface->get_tag_name(proptag, eh, value)) {
+  if (!mesh_interface->get_property(eh, prop, value)) {
     return mesh_interface->code();
   }
 
@@ -351,44 +328,28 @@ ErrorCode DagMCmoab::prop_value(EntityHandle eh, const std::string& prop, std::s
 ErrorCode DagMCmoab::prop_values(EntityHandle eh, const std::string& prop,
                                  std::vector< std::string >& values) {
 
-  std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
-  if (it == property_tagmap.end()) {
-    return DAG_TAG_NOT_FOUND;
-  }
-  Tag proptag = (*it).second;
-
-  // Convert a property tag's value on a handle to a list of strings
-  if (!mesh_interface->get_tag_data_vec(proptag, eh, values)) {
+  if (!mesh_interface->get_properties(eh, prop, values)) {
     return mesh_interface->code();
   }
+
   return DAG_SUCCESS;
 
 }
 
 bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
 
-  std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
-  if (it == property_tagmap.end()) {
-    return false;
-  }
-  Tag proptag = (*it).second;
-  std::string dummyvalue;
-  bool found = mesh_interface->get_tag_name(proptag, eh, dummyvalue);
-
-  return found;
-
+  return mesh_interface->has_property(eh, prop);
 }
 
 // TO-DO: figure out where this are used
 ErrorCode DagMCmoab::get_all_prop_values(const std::string& prop, std::vector<std::string>& return_list) {
 
-  std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
-  if (it == property_tagmap.end()) {
-    return DAG_TAG_NOT_FOUND;
+  Tag proptag;
+  if (!mesh_interface->get_prop_tag(prop, proptag)) {
+    return mesh_interface->code();
   }
 
   EntityHandle root = 0;
-  Tag proptag = (*it).second;
   Range all_ents;
   if (!mesh_interface->get_tagged_entity_sets(root, proptag, all_ents)) {
     return mesh_interface->code();
@@ -397,9 +358,9 @@ ErrorCode DagMCmoab::get_all_prop_values(const std::string& prop, std::vector<st
   std::set<std::string> unique_values;
   for (auto& entity : all_ents) {
     std::vector<std::string> values;
-    ErrorCode rval = rval = prop_values(entity, prop, values);
-    if (DAG_SUCCESS != rval)
-      return rval;
+    if (!mesh_interface->get_properties(entity, prop, values)) {
+      return mesh_interface->code();
+    }
     unique_values.insert(values.begin(), values.end());
   }
 
@@ -410,32 +371,35 @@ ErrorCode DagMCmoab::get_all_prop_values(const std::string& prop, std::vector<st
 ErrorCode DagMCmoab::entities_by_property(const std::string& prop,
                                           std::vector<EntityHandle>& return_list,
                                           int dimension, const std::string* value) {
-  ErrorCode rval;
-  std::map<std::string, Tag>::iterator it = property_tagmap.find(prop);
-  if (it == property_tagmap.end()) {
-    return DAG_TAG_NOT_FOUND;
+
+  Tag proptag;
+  if (!mesh_interface->get_prop_tag(prop, proptag)) {
+    return mesh_interface->code();
   }
-  Tag proptag = (*it).second;
+
   Range all_ents;
   EntityHandle root = 0;
+  void* vals[2] = {NULL, (dimension != 0) ? &dimension : NULL };
   std::vector<Tag> tags = {proptag, GTT->get_geom_tag()};
 
   // Note that we cannot specify values for proptag here-- the passed value,
   // if it exists, may be only a subset of the packed string representation
   // of this tag.
 
-  if (!mesh_interface->get_tagged_entity_sets(root, tags, all_ents)) {
+  if (!mesh_interface->get_tagged_entity_sets(root, tags, vals, all_ents)) {
     return mesh_interface->code();
   }
 
   std::set<EntityHandle> handles;
   for (auto& ent : all_ents) {
     std::vector<std::string> values;
-    rval = prop_values(ent, prop, values);
-    if (DAG_SUCCESS != rval)
-      return rval;
-    if (value && std::find(values.begin(), values.end(), *value) != values.end()) {
-      handles.insert(ent);
+    if (!mesh_interface->get_properties(ent, prop, values)) {
+      return mesh_interface->code();
+    }
+    // If a specific value was specified, look for this
+    if (value != nullptr) {
+      if (std::find(values.begin(), values.end(), *value) != values.end())
+        handles.insert(ent);
     } else {
       handles.insert(ent);
     }

@@ -81,20 +81,24 @@ class MoabInterface : public MeshInterface {
   bool setup_geom();
   bool setup_indices();
 
-  // Methods for fetching and setting metadata
+  // Settings
   bool set_faceting_tol();
   double get_faceting_tol() { return facetingTolerance; };
 
-  // Return a map of tags given property names
-  bool set_tagmap(std::set< std::string >& prop_names, std::map<std::string, Tag>& property_tagmap);
-  bool append_group_properties(const char* delimiters, std::map<std::string, Tag>& property_tagmap);
-  bool get_keywords(std::vector<std::string>& keywords_list, const char* delimiters);
 
+  bool get_keywords(std::vector<std::string>& keywords_list, const char* delimiters);
+  bool update_properties(std::set< std::string >& prop_names, const char* delimiters);
+  bool get_property(EntityHandle eh, const std::string& prop, std::string& value);
+  bool get_properties(EntityHandle eh, const std::string& prop, std::vector< std::string >& values);
+  bool has_property(EntityHandle eh, const std::string& prop);
+
+  // Methods for fetching and setting metadata
   // TODO factorise further to make these methods private.
+  bool get_prop_tag(const std::string& prop, Tag& proptag);
   bool get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values);
   bool get_tag_name(Tag tag, EntityHandle eh, std::string& name);
   bool get_tagged_entity_sets(EntityHandle group, Tag tag, Range& group_sets);
-  bool get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags, Range& group_sets);
+  bool get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags, const void* const* vals, Range& group_sets);
 
   // Retrieve references to moab
   moab::Interface& moab() { return container->mesh(); };
@@ -141,6 +145,12 @@ class MoabInterface : public MeshInterface {
 
   bool build_indices(Range& surfs, Range& vols);
 
+  // Return a map of tags given property names
+  bool set_tagmap(std::set< std::string >& prop_names);
+
+
+  bool append_group_properties(const char* delimiters);
+
   /** \brief Parse a group name into a set of key:value pairs */
   bool parse_group_name(EntityHandle group_set, prop_map& result, const char* delimiters = "_");
 
@@ -161,19 +171,17 @@ class MoabInterface : public MeshInterface {
 
   // Methods for fetching metadata values
   bool get_group_handles(std::vector<EntityHandle>& group_handles);
+  bool get_group_props(EntityHandle group, std::string& name);
+  bool get_entity_sets(EntityHandle group, Range& group_sets);
   bool get_tag(std::string& tagname, Tag& tag);
   bool get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
                     const int num_handles, void* tag_data);
   bool get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
                         const int num_handles, const void** tag_data, int* len);
-  bool get_group_name(EntityHandle group, std::string& name);
-  bool get_entity_sets(EntityHandle group, Range& group_sets);
-
   Tag get_tag(const char* name, int size, TagType store, DataType type,
               const void* def_value = NULL, bool create_if_missing = true);
 
-
-  // Convenience methods for accessing handles
+  // Convenience methods for accessing entity handles
   std::vector<EntityHandle>& surf_handles() {
     return entHandles[surfs_handle_idx];
   };
@@ -183,6 +191,9 @@ class MoabInterface : public MeshInterface {
   std::vector<EntityHandle>& group_handles() {
     return entHandles[groups_handle_idx];
   };
+
+  // Reset the state of the MOAB error code.
+  void reset_code() { rval = moab::MB_SUCCESS; };
 
   // Container for the mesh
   std::shared_ptr<MeshContainer<moab::Interface> > container;
@@ -196,7 +207,7 @@ class MoabInterface : public MeshInterface {
   Tag nameTag;
   Tag facetingTolTag;
 
-  const int null_delimiter_length;
+  static const int null_delimiter_length = 1;
 
   static const int vertex_handle_idx = 0;
   static const int curve_handle_idx = 1;
@@ -214,6 +225,9 @@ class MoabInterface : public MeshInterface {
 
   /** entity index (contiguous 1-N indices); indexed like rootSets */
   std::vector<int> entIndices;
+
+  /** map from the canonical property names to the tags representing them */
+  std::map<std::string, Tag> property_tagmap;
 
 };
 

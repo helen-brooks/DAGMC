@@ -120,11 +120,6 @@ class DagMCmoab : public DagMCBase {
 
  private:
 
-  /** \brief Wrapper around GTT->find_geomsets() */
-  ErrorCode find_geomsets() {
-    return ErrorCode(GTT->find_geomsets());
-  };
-
   /* SECTION II: Fundamental Geometry Operations/Queries */
   /* The methods in this section are thin wrappers around methods in the
    *  GeometryQueryTool.
@@ -323,7 +318,6 @@ class DagMCmoab : public DagMCBase {
   ErrorCode entities_by_property(const std::string& prop, std::vector<EntityHandle>& return_list,
                                  int dimension = 0, const std::string* value = NULL);
 
-
   // ***************************************************************************
   // SECTION VI: Other
   // ***************************************************************************
@@ -379,9 +373,6 @@ class DagMCmoab : public DagMCBase {
   std::vector<double> disList;
   std::vector<int> dirList;
   std::vector<EntityHandle> surList, facList;
-
-  /** map from the canonical property names to the tags representing them */
-  std::map<std::string, Tag> property_tagmap;
 
 }; // End DagMC class definition
 
