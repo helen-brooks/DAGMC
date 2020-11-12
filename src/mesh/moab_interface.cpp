@@ -273,6 +273,52 @@ bool MoabInterface::set_tagmap(std::set< std::string >& prop_names) {
   return true;
 }
 
+bool MoabInterface::get_ents_and_vals_with_prop(const std::string& prop,
+                                                std::set<EntityHandle>& handles,
+                                                std::set<std::string>& unique_values,
+                                                bool checkval,
+                                                int dimension,
+                                                std::string value) {
+
+  Tag proptag;
+  if (!get_prop_tag(prop, proptag)) {
+    return false;
+  }
+
+  Range all_ents;
+  EntityHandle root = 0;
+  if (checkval) {
+    // Note that we cannot specify values for proptag here-- the passed value,
+    // if it exists, may be only a subset of the packed string representation
+    // of this tag.
+    void* vals[2] = {NULL, (dimension != 0) ? &dimension : NULL };
+    std::vector<Tag> tags = {proptag, GTT->get_geom_tag()};
+    if (!get_tagged_entity_sets(root, tags, vals, all_ents)) {
+      return false;
+    }
+  } else if (!get_tagged_entity_sets(root, proptag, all_ents)) {
+    return false;
+  }
+
+  for (auto& ent : all_ents) {
+    std::vector<std::string> values;
+    if (!get_properties(ent, prop, values)) {
+      return false;
+    }
+    unique_values.insert(values.begin(), values.end());
+
+    // If requested, check for a specific value before saving ent
+    if (checkval) {
+      if (std::find(values.begin(), values.end(), value) != values.end())
+        handles.insert(ent);
+    } else
+      handles.insert(ent);
+
+  }
+
+  return true;
+}
+
 bool MoabInterface::append_group_properties(const char* delimiters) {
 
   for (auto& group : group_handles()) {

@@ -344,27 +344,12 @@ bool DagMCmoab::has_prop(EntityHandle eh, const std::string& prop) {
 // TO-DO: figure out where this are used
 ErrorCode DagMCmoab::get_all_prop_values(const std::string& prop, std::vector<std::string>& return_list) {
 
-  Tag proptag;
-  if (!mesh_interface->get_prop_tag(prop, proptag)) {
+  std::set<EntityHandle> dummy;
+  std::set<std::string> unique_vals;
+  if (!mesh_interface->get_ents_and_vals_with_prop(prop, dummy, unique_vals)) {
     return mesh_interface->code();
   }
-
-  EntityHandle root = 0;
-  Range all_ents;
-  if (!mesh_interface->get_tagged_entity_sets(root, proptag, all_ents)) {
-    return mesh_interface->code();
-  }
-
-  std::set<std::string> unique_values;
-  for (auto& entity : all_ents) {
-    std::vector<std::string> values;
-    if (!mesh_interface->get_properties(entity, prop, values)) {
-      return mesh_interface->code();
-    }
-    unique_values.insert(values.begin(), values.end());
-  }
-
-  return_list.assign(unique_values.begin(), unique_values.end());
+  return_list.assign(unique_vals.begin(), unique_vals.end());
   return DAG_SUCCESS;
 }
 
@@ -372,39 +357,18 @@ ErrorCode DagMCmoab::entities_by_property(const std::string& prop,
                                           std::vector<EntityHandle>& return_list,
                                           int dimension, const std::string* value) {
 
-  Tag proptag;
-  if (!mesh_interface->get_prop_tag(prop, proptag)) {
-    return mesh_interface->code();
-  }
-
-  Range all_ents;
-  EntityHandle root = 0;
-  void* vals[2] = {NULL, (dimension != 0) ? &dimension : NULL };
-  std::vector<Tag> tags = {proptag, GTT->get_geom_tag()};
-
-  // Note that we cannot specify values for proptag here-- the passed value,
-  // if it exists, may be only a subset of the packed string representation
-  // of this tag.
-
-  if (!mesh_interface->get_tagged_entity_sets(root, tags, vals, all_ents)) {
-    return mesh_interface->code();
+  std::string strval = "";
+  bool checkval = false;
+  if (value != nullptr) {
+    checkval = true;
+    strval = *value;
   }
 
   std::set<EntityHandle> handles;
-  for (auto& ent : all_ents) {
-    std::vector<std::string> values;
-    if (!mesh_interface->get_properties(ent, prop, values)) {
-      return mesh_interface->code();
-    }
-    // If a specific value was specified, look for this
-    if (value != nullptr) {
-      if (std::find(values.begin(), values.end(), *value) != values.end())
-        handles.insert(ent);
-    } else {
-      handles.insert(ent);
-    }
+  std::set<std::string> dummy;
+  if (!mesh_interface->get_ents_and_vals_with_prop(prop, handles, dummy, checkval, dimension, strval)) {
+    return mesh_interface->code();
   }
-
   return_list.assign(handles.begin(), handles.end());
   return DAG_SUCCESS;
 }

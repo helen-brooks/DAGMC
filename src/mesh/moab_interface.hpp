@@ -85,20 +85,18 @@ class MoabInterface : public MeshInterface {
   bool set_faceting_tol();
   double get_faceting_tol() { return facetingTolerance; };
 
-
-  bool get_keywords(std::vector<std::string>& keywords_list, const char* delimiters);
+  // Methods for retrieving and updating metadata
   bool update_properties(std::set< std::string >& prop_names, const char* delimiters);
+  bool get_keywords(std::vector<std::string>& keywords_list, const char* delimiters);
   bool get_property(EntityHandle eh, const std::string& prop, std::string& value);
   bool get_properties(EntityHandle eh, const std::string& prop, std::vector< std::string >& values);
   bool has_property(EntityHandle eh, const std::string& prop);
-
-  // Methods for fetching and setting metadata
-  // TODO factorise further to make these methods private.
-  bool get_prop_tag(const std::string& prop, Tag& proptag);
-  bool get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values);
-  bool get_tag_name(Tag tag, EntityHandle eh, std::string& name);
-  bool get_tagged_entity_sets(EntityHandle group, Tag tag, Range& group_sets);
-  bool get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags, const void* const* vals, Range& group_sets);
+  bool get_ents_and_vals_with_prop(const std::string& prop,
+                                   std::set<EntityHandle>& handles,
+                                   std::set<std::string>& unique_vals,
+                                   bool checkval = false,
+                                   int dimension = 0,
+                                   std::string value = "");
 
   // Retrieve references to moab
   moab::Interface& moab() { return container->mesh(); };
@@ -114,7 +112,6 @@ class MoabInterface : public MeshInterface {
   // Get the name tag
   // To-do: what is this for?
   Tag name_tag() { return nameTag; };
-
 
   // Indexing methods
 
@@ -148,9 +145,6 @@ class MoabInterface : public MeshInterface {
   // Return a map of tags given property names
   bool set_tagmap(std::set< std::string >& prop_names);
 
-
-  bool append_group_properties(const char* delimiters);
-
   /** \brief Parse a group name into a set of key:value pairs */
   bool parse_group_name(EntityHandle group_set, prop_map& result, const char* delimiters = "_");
 
@@ -168,6 +162,8 @@ class MoabInterface : public MeshInterface {
   bool set_tag(Tag tag, EntityHandle eh, std::string& new_string);
   bool set_tag_data(Tag tag, const EntityHandle* entityPtr,
                     int num_handles, const void* const tag_data, int len);
+  bool append_group_properties(const char* delimiters);
+
 
   // Methods for fetching metadata values
   bool get_group_handles(std::vector<EntityHandle>& group_handles);
@@ -176,10 +172,16 @@ class MoabInterface : public MeshInterface {
   bool get_tag(std::string& tagname, Tag& tag);
   bool get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
                     const int num_handles, void* tag_data);
+  bool get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values);
   bool get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
                         const int num_handles, const void** tag_data, int* len);
-  Tag get_tag(const char* name, int size, TagType store, DataType type,
-              const void* def_value = NULL, bool create_if_missing = true);
+  bool get_tag_name(Tag tag, EntityHandle eh, std::string& name);
+  Tag  get_tag(const char* name, int size, TagType store, DataType type,
+               const void* def_value = NULL, bool create_if_missing = true);
+  bool get_prop_tag(const std::string& prop, Tag& proptag);
+  bool get_tagged_entity_sets(EntityHandle group, Tag tag, Range& group_sets);
+  bool get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags,
+                              const void* const* vals, Range& group_sets);
 
   // Convenience methods for accessing entity handles
   std::vector<EntityHandle>& surf_handles() {
