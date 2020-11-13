@@ -1,6 +1,7 @@
 #ifndef DAG_GTT_HPP
 #define DAG_GTT_HPP
 
+#ifdef LIBMESH
 // Libmesh interface
 #include "libmesh_interface.hpp"
 
@@ -37,7 +38,6 @@ class GeomTopoTool {
 
 
 };
-
 
 class GeomTopoToolLM : public GeomTopoTool {
 
@@ -81,5 +81,7 @@ class GeomTopoToolLM : public GeomTopoTool {
 };
 
 }// End namespace DAGMC
+
+#endif
 
 #endif

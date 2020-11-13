@@ -1,13 +1,9 @@
-// C++ include files that we need
-#include <iostream>
-// Functions to initialize the library.
-#include "libmesh/libmesh.h"
-// Basic include files needed for the mesh functionality.
-#include "libmesh/mesh.h"
 #include "GeomTopoTool.hpp"
+#include "common.hpp"
 
 int main(int argc, char** argv) {
 
+#ifdef LIBMESH
   // If exodus support is not enabled exit here
 #ifndef LIBMESH_HAVE_EXODUS_API
   std::cerr << "Please re-build libMesh with ExodusII support." << std::endl;
@@ -51,5 +47,11 @@ int main(int argc, char** argv) {
   }
 
   return EXIT_SUCCESS;
+
+#else
+  std::cerr << "Please re-build with libMesh." << std::endl;
+  return 1;
+#endif
 }
+
 

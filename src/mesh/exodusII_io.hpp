@@ -1,6 +1,8 @@
 #ifndef DAG_EXODUSIO_HPP
 #define DAG_EXODUSIO_HPP
 
+#ifdef LIBMESH
+
 #include "io_base.hpp"
 #include "libmesh/exodusII.h"
 
@@ -55,5 +57,7 @@ class ExodusAttributeReader : public IOBase {
 
 };
 }
+
+#endif
 
 #endif

@@ -1,6 +1,8 @@
 #include "container.hpp"
 #include <typeinfo>
 
+#ifdef LIBMESH
+
 namespace DAGMC {
 
 
@@ -78,3 +80,5 @@ bool ElemConstItContainer::checkIfValid() const {
 
 
 }
+
+#endif

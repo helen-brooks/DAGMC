@@ -115,15 +115,19 @@ class MoabInterface : public MeshInterface {
 
   // Indexing methods
 
+  /** map from dimension & global ID to EntityHandle */
+  EntityHandle entity_by_id(int dimension, int id);
   /** map from dimension & base-1 ordinal index to EntityHandle */
   EntityHandle entity_by_index(int dimension, int index);
 
+  /** map from dimension & base-1 ordinal index to global ID */
+  int id_by_index(int dimension, int index);
   /** PPHW: Missing dim & global ID ==> base-1 ordinal index */
   /** map from EntityHandle to base-1 ordinal index */
   int index_by_handle(EntityHandle handle);
+  /** map from EntityHandle to global ID */
+  int get_entity_id(EntityHandle this_ent);
 
-  /** map from dimension & base-1 ordinal index to global ID */
-  int id_by_index(int dimension, int index);
 
   /** \brief get number of geometric sets corresponding to geometry of specified dimension
    *

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <memory>
 
+#ifdef LIBMESH
+
 #include "libmesh_interface.hpp"
 #include "io_factory.hpp"
 
@@ -73,3 +75,5 @@ TEST_F(LibMeshInterfaceTest, loadExternal) {
   EXPECT_TRUE(interface->load(filenames.at(0)));
 
 }
+
+#endif

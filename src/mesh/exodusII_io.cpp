@@ -1,5 +1,6 @@
 #include "exodusII_io.hpp"
 
+#ifdef LIBMESH
 namespace DAGMC {
 
 bool ExodusAttributeReader::open(std::string filename, IOBase::Mode mode) {
@@ -119,3 +120,4 @@ bool ExodusAttributeReader::init() {
 }
 
 }
+#endif

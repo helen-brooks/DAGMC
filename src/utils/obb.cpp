@@ -1,5 +1,6 @@
 #include "obb.hpp"
-#include <limits>
+
+#ifdef LIBMESH
 
 namespace DAGMC {
 
@@ -534,3 +535,5 @@ void OBBUtils::findExtremalPoints(Matrix& points, Matrix& basis,
 }
 
 }
+
+#endif

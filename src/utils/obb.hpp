@@ -1,9 +1,13 @@
 #ifndef DAG_OBB_HPP
 #define DAG_OBB_HPP
 
+#ifdef LIBMESH
+
+#include "common.hpp"
 #include "tree.hpp"
 #include "box.hpp"
 #include "container.hpp"
+//#include <limits>
 
 namespace DAGMC {
 
@@ -176,4 +180,5 @@ void findExtremalPoints(Matrix& points, Matrix& basis,
 
 }
 
+#endif
 #endif

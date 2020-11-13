@@ -6,11 +6,13 @@ if (BUILD_TESTS)
   add_subdirectory(gtest)
 endif ()
 
-# Add currently self-isolated libmesh-dependent classes
-if(BUILD_LIBMESH)
-  add_subdirectory(mesh)
-  add_subdirectory(geom)
+add_subdirectory(mesh)
+
+if (LIBMESH)
+add_subdirectory(utils)
 endif()
+
+add_subdirectory(geom)
 
 # Required libraries
 add_subdirectory(dagmc)

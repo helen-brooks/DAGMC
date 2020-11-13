@@ -9,6 +9,7 @@
 class RefEntity;
 class RayTracingInterface;
 
+// What is this for?
 struct DagmcVolData {
   int mat_id;
   double density, importance;
@@ -151,7 +152,6 @@ class DagMCmoab : public DagMCBase {
 
   ErrorCode closest_to_location(EntityHandle volume, const double point[3],
                                 double& result, EntityHandle* surface = 0) override;
-
   ErrorCode measure_volume(EntityHandle volume, double& result) override;
 
   ErrorCode measure_area(EntityHandle surface, double& result) override;
@@ -376,21 +376,10 @@ class DagMCmoab : public DagMCBase {
 
 }; // End DagMC class definition
 
-inline EntityHandle DagMCmoab::entity_by_index(int dimension, int index) {
-  return mesh_interface->entity_by_index(dimension, index);
-}
 
-inline int DagMCmoab::index_by_handle(EntityHandle handle) {
-  return mesh_interface->index_by_handle(handle);
-}
-
-inline int DagMCmoab::id_by_index(int dimension, int index) {
-  return mesh_interface->id_by_index(dimension, index);
-}
-
-inline unsigned int DagMCmoab::num_entities(int dimension) {
-  return mesh_interface->num_entities(dimension);
-}
+// ***************************************************************************
+// SECTION VI inline functiosn
+// ***************************************************************************
 
 inline ErrorCode DagMCmoab::getobb(EntityHandle volume, double minPt[3], double maxPt[3]) {
   errHandler->checkSetErr(GTT->get_bounding_coords(volume, minPt, maxPt),

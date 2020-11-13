@@ -239,20 +239,40 @@ bool DagMCmoab::is_implicit_complement(EntityHandle volume) {
 // *****************************************************************************
 
 EntityHandle DagMCmoab::entity_by_id(int dimension, int id) {
-  return GTT->entity_by_id(dimension, id);
+  return mesh_interface->entity_by_id(dimension, id);
 }
 
 int DagMCmoab::get_entity_id(EntityHandle this_ent) {
-  return GTT->global_id(this_ent);
+  return mesh_interface->get_entity_id(this_ent);
+}
+
+EntityHandle DagMCmoab::entity_by_index(int dimension, int index) {
+  return mesh_interface->entity_by_index(dimension, index);
+}
+
+int DagMCmoab::index_by_handle(EntityHandle handle) {
+  return mesh_interface->index_by_handle(handle);
+}
+
+int DagMCmoab::id_by_index(int dimension, int index) {
+  return mesh_interface->id_by_index(dimension, index);
+}
+
+unsigned int DagMCmoab::num_entities(int dimension) {
+  return mesh_interface->num_entities(dimension);
 }
 
 // *****************************************************************************
 // SECTION IV
 // *****************************************************************************
 
-double DagMCmoab::overlap_thickness() { return ray_tracer->get_overlap_thickness(); }
+double DagMCmoab::overlap_thickness() {
+  return ray_tracer->get_overlap_thickness();
+}
 
-double DagMCmoab::numerical_precision() { return ray_tracer->get_numerical_precision(); }
+double DagMCmoab::numerical_precision() {
+  return ray_tracer->get_numerical_precision();
+}
 
 void DagMCmoab::set_overlap_thickness(double new_thickness) {
   ray_tracer->set_overlap_thickness(new_thickness);
@@ -261,19 +281,6 @@ void DagMCmoab::set_overlap_thickness(double new_thickness) {
 void DagMCmoab::set_numerical_precision(double new_precision) {
   ray_tracer->set_numerical_precision(new_precision);
 
-}
-
-ErrorCode DagMCmoab::write_mesh(const char* ffile) {
-
-  // Write out a mesh file if requested
-  if (ffile) {
-    if (!mesh_interface->write(std::string(ffile))) {
-      std::cerr << "Failed to write mesh to " << ffile << "." << std::endl;
-      return mesh_interface->code();
-    }
-  }
-
-  return DAG_SUCCESS;
 }
 
 // *****************************************************************************
@@ -370,6 +377,23 @@ ErrorCode DagMCmoab::entities_by_property(const std::string& prop,
     return mesh_interface->code();
   }
   return_list.assign(handles.begin(), handles.end());
+  return DAG_SUCCESS;
+}
+
+// ***************************************************************************
+// SECTION VI
+// ***************************************************************************
+
+ErrorCode DagMCmoab::write_mesh(const char* ffile) {
+
+  // Write out a mesh file if requested
+  if (ffile) {
+    if (!mesh_interface->write(std::string(ffile))) {
+      std::cerr << "Failed to write mesh to " << ffile << "." << std::endl;
+      return mesh_interface->code();
+    }
+  }
+
   return DAG_SUCCESS;
 }
 

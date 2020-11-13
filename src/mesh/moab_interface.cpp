@@ -153,6 +153,14 @@ bool MoabInterface::build_indices(Range& surfs, Range& vols) {
 
 }
 
+EntityHandle MoabInterface::entity_by_id(int dimension, int id) {
+  return GTT->entity_by_id(dimension, id);
+}
+
+int MoabInterface::get_entity_id(EntityHandle this_ent) {
+  return GTT->global_id(this_ent);
+}
+
 int MoabInterface::id_by_index(int dimension, int index) {
   EntityHandle h = entity_by_index(dimension, index);
   if (!h)

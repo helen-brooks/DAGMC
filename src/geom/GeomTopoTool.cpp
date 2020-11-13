@@ -1,8 +1,7 @@
 #include "GeomTopoTool.hpp"
-#include <libmesh/boundary_info.h>
 
+#ifdef LIBMESH
 namespace DAGMC {
-
 
 bool GeomTopoToolLM::setupGeometry() {
 
@@ -188,3 +187,4 @@ const SurfaceSenses& GeomTopoToolLM::getVolPair(unsigned int index) {
 
 
 }
+#endif

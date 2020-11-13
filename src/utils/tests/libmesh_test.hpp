@@ -1,3 +1,4 @@
+#ifdef LIBMESH
 #include <gtest/gtest.h>
 #include "libmesh.hpp"
 #include <iostream>
@@ -144,3 +145,4 @@ class libMeshSimpleTest : public libMeshTest {
   unsigned int nNodesPerFace;
 
 };
+#endif

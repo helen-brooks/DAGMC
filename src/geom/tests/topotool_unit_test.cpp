@@ -1,3 +1,4 @@
+#ifdef LIBMESH
 #include "libmesh_test.hpp"
 #include "GeomTopoTool.hpp"
 
@@ -95,4 +96,5 @@ TEST_F(GeomTopoToolLMTest, setupGeometry) {
   //Done!
 
 }
+#endif
 

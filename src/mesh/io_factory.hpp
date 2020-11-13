@@ -1,6 +1,8 @@
 #ifndef DAG_IO_HPP
 #define DAG_IO_HPP
 
+#ifdef LIBMESH
+
 #include "exodusII_io.hpp"
 
 namespace DAGMC {
@@ -20,5 +22,7 @@ std::shared_ptr<IOBase> getIOPtr(std::string filename) {
 }
 
 }
+
+#endif
 
 #endif

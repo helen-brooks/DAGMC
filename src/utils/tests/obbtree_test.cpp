@@ -1,3 +1,4 @@
+#ifdef LIBMESH
 #include "libmesh_test.hpp"
 #include "obbtree.hpp"
 
@@ -483,3 +484,4 @@ void doTreeTest(DAGMC::const_element_iterator elBeg,
   }
   EXPECT_TRUE(elemIDs.empty());
 }
+#endif

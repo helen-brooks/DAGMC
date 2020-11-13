@@ -4,7 +4,6 @@
 
 namespace DAGMC {
 
-
 // Generic constructor: oriented box
 Box::Box(Vector max,  Vector min,  Matrix M) :
   dim(max.n_rows), maxPoint(max), minPoint(min), basis(M) {

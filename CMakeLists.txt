@@ -37,7 +37,7 @@ if(BUILD_MCNP5 OR BUILD_MCNP6)
 endif()
 
 find_package(MOAB REQUIRED)
-if(BUILD_LIBMESH)
+if(LIBMESH)
   # Look for libMesh
   find_package(libMesh REQUIRED)
   # Look for armadillo

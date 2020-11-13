@@ -1,6 +1,8 @@
 #include "libmesh_interface.hpp"
 #include "io_factory.hpp"
 
+#ifdef LIBMESH
+
 namespace DAGMC {
 
 // *****************************************************************************
@@ -90,5 +92,5 @@ bool LibMeshInterface::loadSenseData(std::string filename) {
 
 }
 
-
 }
+#endif

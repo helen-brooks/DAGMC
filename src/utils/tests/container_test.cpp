@@ -1,3 +1,5 @@
+#ifdef LIBMESH
+
 #include "libmesh_test.hpp"
 #include "container.hpp"
 
@@ -316,5 +318,7 @@ TEST_F(ContainerTest, PredicateArgTest) {
   EXPECT_EQ(elemPtr, nullptr);
 
 }
+
+#endif
 
 

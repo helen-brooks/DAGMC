@@ -1,3 +1,4 @@
+#ifdef LIBMESH
 #include "libmesh_test.hpp"
 #include "obb.hpp"
 
@@ -577,3 +578,4 @@ bool checkBasis(const DAGMC::Matrix& basis, double tol, std::stringstream& errms
   }
   return true;
 };
+#endif

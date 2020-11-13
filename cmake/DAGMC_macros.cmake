@@ -2,7 +2,7 @@ macro (dagmc_setup_build)
   message("")
 
   # All DAGMC libraries
-  set(DAGMC_LIBRARY_LIST dagmc pyne_dagmc uwuw dagtally makeWatertight dagsolid fludag geom mesh)
+  set(DAGMC_LIBRARY_LIST dagmc pyne_dagmc uwuw dagtally makeWatertight dagsolid fludag utils geom mesh)
 
   # Keep track of which libraries are installed
   set(DAGMC_LIBRARIES MOAB CACHE INTERNAL "DAGMC_LIBRARIES")
@@ -41,7 +41,6 @@ endmacro ()
 macro (dagmc_setup_options)
   message("")
 
-  option(BUILD_LIBMESH     "Build with LibMesh"                      OFF)
   option(BUILD_MCNP5       "Build DAG-MCNP5"                         OFF)
   option(BUILD_MCNP6       "Build DAG-MCNP6"                         OFF)
   option(BUILD_MCNP_PLOT   "Build DAG-MCNP5/6 with plotting support" OFF)
@@ -71,6 +70,8 @@ macro (dagmc_setup_options)
   option(BUILD_PIC        "Build with PIC"           OFF)
 
   option(BUILD_RPATH "Build libraries and executables with RPATH" ON)
+
+  option(LIBMESH     "Build with LibMesh"                      OFF)
 
   option(DOUBLE_DOWN "Enable ray tracing with Embree via double down" OFF)
 
@@ -220,13 +221,16 @@ macro (dagmc_install_library lib_name)
     if (BUILD_RPATH)
       set_target_properties(${lib_name}-shared
         PROPERTIES INSTALL_RPATH "${INSTALL_RPATH_DIRS}"
-                   INSTALL_RPATH_USE_LINK_PATH TRUE)
+                   INSTALL_RPATH_USE_LINK_PATH ToRUE)
     endif ()
     message("LINK LIBS: ${LINK_LIBS_SHARED}")
     target_link_libraries(${lib_name}-shared PUBLIC ${LINK_LIBS_SHARED})
     if (DOUBLE_DOWN)
       target_compile_definitions(${lib_name}-shared PRIVATE DOUBLE_DOWN)
       target_link_libraries(${lib_name}-shared PUBLIC dd)
+    endif()
+    if (LIBMESH)
+      target_compile_definitions(${lib_name}-shared PRIVATE LIBMESH)
     endif()
     target_include_directories(${lib_name}-shared INTERFACE $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>
                                                             ${MESH_INCLUDE_DIRS})
@@ -245,8 +249,11 @@ macro (dagmc_install_library lib_name)
         PROPERTIES INSTALL_RPATH "" INSTALL_RPATH_USE_LINK_PATH FALSE)
     endif ()
     target_link_libraries(${lib_name}-static ${LINK_LIBS_STATIC})
+    if (LIBMESH)
+      target_compile_definitions(${lib_name}-static PRIVATE LIBMESH)
+    endif()
     target_include_directories(${lib_name}-static INTERFACE $<INSTALL_INTERFACE:${INSTALL_INCLUDE_DIR}>
-                                                            ${MESH_INCLUDE_DIRS})
+      ${MESH_INCLUDE_DIRS})
 
     install(TARGETS ${lib_name}-static
             EXPORT DAGMCTargets
@@ -296,6 +303,9 @@ macro (dagmc_install_test test_name ext)
   dagmc_get_link_libs()
 
   add_executable(${test_name} ${test_name}.${ext} ${DRIVERS})
+  if (LIBMESH)
+    target_compile_definitions(${test_name} PRIVATE LIBMESH)
+  endif()
   if (BUILD_RPATH)
     if (BUILD_STATIC_EXE)
       set_target_properties(${test_name}

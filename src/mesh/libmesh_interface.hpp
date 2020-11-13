@@ -1,8 +1,11 @@
 #ifndef DAG_LIBMESH_INTERFACE_HPP
 #define DAG_LIBMESH_INTERFACE_HPP
 
-#include "libmesh.hpp"
 #include "mesh_interface.hpp"
+
+#ifdef LIBMESH
+#include "libmesh.hpp"
+
 
 namespace DAGMC {
 
@@ -95,5 +98,6 @@ class LibMeshInterface : public MeshInterface {
 };
 
 }
+#endif
 
 #endif
