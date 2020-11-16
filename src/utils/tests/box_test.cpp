@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iostream>
-#include "box.hpp"
+#include "Box.hpp"
 
 // Box test suite
 // Tests organised by box type rather than method

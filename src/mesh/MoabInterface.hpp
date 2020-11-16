@@ -1,7 +1,7 @@
 #ifndef DAG_MOAB_INTERFACE_HPP
 #define DAG_MOAB_INTERFACE_HPP
 
-#include "mesh_interface.hpp"
+#include "MeshInterface.hpp"
 #include "Moab.hpp"
 #include "Error.hpp"
 

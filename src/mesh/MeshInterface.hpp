@@ -1,7 +1,7 @@
 #ifndef DAG_MESH_INTERFACE_HPP
 #define DAG_MESH_INTERFACE_HPP
 
-#include "common.hpp"
+#include "Common.hpp"
 
 namespace DAGMC {
 class MeshInterface {

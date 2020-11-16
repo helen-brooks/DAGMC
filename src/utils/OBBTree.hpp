@@ -1,8 +1,8 @@
 #ifndef DAG_OBBTREE_HPP
 #define DAG_OBBTREE_HPP
 
-#include "tree.hpp"
-#include "obb.hpp"
+#include "Tree.hpp"
+#include "OBB.hpp"
 
 namespace DAGMC {
 

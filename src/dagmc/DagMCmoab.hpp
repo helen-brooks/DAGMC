@@ -3,7 +3,7 @@
 
 // Headers
 #include "DagMCBase.hpp"
-#include "moab_interface.hpp"
+#include "MoabInterface.hpp"
 #include "DefaultRayTracer.hpp"
 
 //Forward  class declarations

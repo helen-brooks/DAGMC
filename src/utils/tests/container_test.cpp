@@ -1,7 +1,7 @@
 #ifdef LIBMESH
 
 #include "libmesh_test.hpp"
-#include "container.hpp"
+#include "Container.hpp"
 
 //---------------------------------------------------------------------------//
 // TEST FIXTURES

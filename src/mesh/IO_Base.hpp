@@ -1,7 +1,7 @@
 #ifndef DAG_IOBASE_HPP
 #define DAG_IOBASE_HPP
 
-#include "mesh_interface.hpp"
+#include "MeshInterface.hpp"
 
 namespace DAGMC {
 

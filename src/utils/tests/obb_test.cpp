@@ -1,6 +1,6 @@
 #ifdef LIBMESH
 #include "libmesh_test.hpp"
-#include "obb.hpp"
+#include "OBB.hpp"
 
 //---------------------------------------------------------------------------//
 // TEST FIXTURES

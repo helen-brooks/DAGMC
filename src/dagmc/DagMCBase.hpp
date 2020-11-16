@@ -4,7 +4,7 @@
 
 // DAGMC headers
 #include "DagMCVersion.hpp"
-#include "common.hpp"
+#include "Common.hpp"
 #include "Moab.hpp"
 #include "Error.hpp"
 

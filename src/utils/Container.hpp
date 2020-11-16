@@ -4,7 +4,7 @@
 #ifdef LIBMESH
 
 #include<set>
-#include "libmesh.hpp"
+#include "Libmesh.hpp"
 
 // The point of these classes is to abstract away the data types of how we
 // actually refer a set of mesh elements, so that they can be iterated

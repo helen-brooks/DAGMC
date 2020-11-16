@@ -1,6 +1,6 @@
 #ifdef LIBMESH
 #include "libmesh_test.hpp"
-#include "obbtree.hpp"
+#include "OBBTree.hpp"
 
 //---------------------------------------------------------------------------//
 // TEST FIXTURES

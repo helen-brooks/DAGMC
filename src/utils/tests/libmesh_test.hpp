@@ -1,6 +1,6 @@
 #ifdef LIBMESH
 #include <gtest/gtest.h>
-#include "libmesh.hpp"
+#include "Libmesh.hpp"
 #include <iostream>
 #include <memory>
 

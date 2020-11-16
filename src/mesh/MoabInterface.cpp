@@ -1,4 +1,4 @@
-#include "moab_interface.hpp"
+#include "MoabInterface.hpp"
 
 namespace DAGMC {
 

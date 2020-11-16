@@ -4,8 +4,8 @@
 
 #ifdef LIBMESH
 
-#include "libmesh_interface.hpp"
-#include "io_factory.hpp"
+#include "LibmeshInterface.hpp"
+#include "IO_Factory.hpp"
 
 //---------------------------------------------------------------------------//
 // TEST FIXTURES

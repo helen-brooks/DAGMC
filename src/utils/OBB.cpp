@@ -1,4 +1,4 @@
-#include "obb.hpp"
+#include "OBB.hpp"
 
 #ifdef LIBMESH
 

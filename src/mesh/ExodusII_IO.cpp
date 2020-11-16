@@ -1,4 +1,4 @@
-#include "exodusII_io.hpp"
+#include "ExodusII_IO.hpp"
 
 #ifdef LIBMESH
 namespace DAGMC {

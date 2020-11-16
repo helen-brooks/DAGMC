@@ -2,8 +2,7 @@
 #define DAG_GTT_HPP
 
 #ifdef LIBMESH
-// Libmesh interface
-#include "libmesh_interface.hpp"
+#include "LibmeshInterface.hpp"
 
 namespace DAGMC {
 

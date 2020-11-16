@@ -2,7 +2,7 @@
 #define DAG_DEFAULT_RAY_TRACER
 
 #include "RayTracer.hpp"
-#include "moab_interface.hpp"
+#include "MoabInterface.hpp"
 
 #ifdef DOUBLE_DOWN
 #include "RTI.hpp"

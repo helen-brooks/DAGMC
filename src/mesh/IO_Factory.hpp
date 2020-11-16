@@ -3,7 +3,7 @@
 
 #ifdef LIBMESH
 
-#include "exodusII_io.hpp"
+#include "ExodusII_IO.hpp"
 
 namespace DAGMC {
 
