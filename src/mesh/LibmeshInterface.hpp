@@ -47,7 +47,7 @@ class InternalMesh : public MeshContainer<libMesh::MeshBase> {
 };
 
 
-class LibMeshInterface : public MeshInterface {
+class LibMeshInterface : public MeshInterface<libMesh::MeshBase> {
  public:
 
   // This constructor creates an internal mesh
@@ -67,20 +67,6 @@ class LibMeshInterface : public MeshInterface {
     return attributes.senseData;
   };
 
-  bool meshIsNull() {
-    if (container == nullptr)
-      return true;
-    else
-      return container->isNull();
-  };
-
-  libMesh::MeshBase& mesh() {
-    return container->mesh();
-  };
-  const libMesh::MeshBase& const_mesh() {
-    return container->const_mesh();
-  };
-
  private:
 
   // Load the primary mesh data (elements, nodes, etc)
@@ -88,9 +74,6 @@ class LibMeshInterface : public MeshInterface {
 
   // Load surface to volume sense relationships
   bool loadSenseData(std::string filename);
-
-  // Container for the mesh
-  std::shared_ptr<MeshContainer<libMesh::MeshBase> > container;
 
   // Additional mesh attributes
   MeshAttributes attributes;

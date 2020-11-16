@@ -28,7 +28,7 @@ void MoabInterface::init() {
   reset_code();
 
   // Create a topo tool
-  GTT = std::make_shared<GeomTopoTool>(moab_ptr(), false);
+  GTT = std::make_shared<GeomTopoTool>(mesh_ptr(), false);
 
   foundGeomsets = false;
 
@@ -40,7 +40,7 @@ bool MoabInterface::load(std::string filename) {
   std::cout << "Loading file " << filename << std::endl;
 
   EntityHandle file_set;
-  rval = moab().create_meshset(moab::MESHSET_SET, file_set);
+  rval = mesh().create_meshset(moab::MESHSET_SET, file_set);
   if (moab::MB_SUCCESS != rval)
     return false;
 
@@ -49,7 +49,7 @@ bool MoabInterface::load(std::string filename) {
   // set entire options string to literal null character
   // Can't we just pass '\0'
   char options[120] = {0};
-  rval = moab().load_file(filename.c_str(), &file_set, options, NULL, 0, 0);
+  rval = mesh().load_file(filename.c_str(), &file_set, options, NULL, 0, 0);
 
   if (moab::MB_UNHANDLED_OPTION == rval) {
     // Some options were unhandled; this is common for loading h5m files.
@@ -63,7 +63,7 @@ bool MoabInterface::load(std::string filename) {
     std::cerr << "DagMC Couldn't read file " << filename << std::endl;
 
     std::string message;
-    if (moab::MB_SUCCESS == moab().get_last_error(message) && !message.empty())
+    if (moab::MB_SUCCESS == mesh().get_last_error(message) && !message.empty())
       std::cerr << "Error message: " << message << std::endl;
 
     return false;
@@ -192,7 +192,7 @@ int MoabInterface::id_by_index(int dimension, int index) {
 bool MoabInterface::write(std::string filename) {
 
   reset_code();
-  rval = moab().write_mesh(filename.c_str());
+  rval = mesh().write_mesh(filename.c_str());
   return (rval == moab::MB_SUCCESS);
 
 }
@@ -538,7 +538,7 @@ bool MoabInterface::get_tag(std::string& tagname, Tag& tag) {
 
   reset_code();
 
-  rval = moab().tag_get_handle(tagname.c_str(), 0,
+  rval = mesh().tag_get_handle(tagname.c_str(), 0,
                                moab::MB_TYPE_OPAQUE, tag,
                                (moab::MB_TAG_SPARSE |
                                 moab::MB_TAG_VARLEN |
@@ -552,7 +552,7 @@ bool MoabInterface::get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
                                  const int num_handles, void* tag_data) {
 
   reset_code();
-  rval = moab().tag_get_data(tag, entityPtr, num_handles, tag_data);
+  rval = mesh().tag_get_data(tag, entityPtr, num_handles, tag_data);
   return (rval == moab::MB_SUCCESS);
 
 }
@@ -561,7 +561,7 @@ bool MoabInterface::get_tag_data_arr(const Tag& tag, const EntityHandle* entityP
                                      const int num_handles, const void** data, int* len) {
 
   reset_code();
-  rval = moab().tag_get_by_ptr(tag, entityPtr, num_handles, data, len);
+  rval = mesh().tag_get_by_ptr(tag, entityPtr, num_handles, data, len);
   return (rval == moab::MB_SUCCESS);
 
 }
@@ -591,7 +591,7 @@ bool MoabInterface::get_tag_name(Tag tag, EntityHandle eh, std::string& name) {
   reset_code();
   const void* data;
   int len;
-  rval = moab().tag_get_by_ptr(tag, &eh, 1, &data, &len);
+  rval = mesh().tag_get_by_ptr(tag, &eh, 1, &data, &len);
 
   if (moab::MB_SUCCESS != rval)
     return false;
@@ -610,7 +610,7 @@ bool MoabInterface::get_group_props(EntityHandle group, std::string& name) {
 bool MoabInterface::get_entity_sets(EntityHandle group, Range& group_sets) {
 
   reset_code();
-  rval = moab().get_entities_by_type(group, moab::MBENTITYSET, group_sets);
+  rval = mesh().get_entities_by_type(group, moab::MBENTITYSET, group_sets);
   return (rval == moab::MB_SUCCESS);
 
 }
@@ -624,7 +624,7 @@ bool MoabInterface::get_tagged_entity_sets(EntityHandle group, Tag tag, Range& g
 bool MoabInterface::get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags, const void* const* vals, Range& group_sets) {
 
   reset_code();
-  rval = moab().get_entities_by_type_and_tag(group, moab::MBENTITYSET, tags.data(), vals, tags.size(), group_sets);
+  rval = mesh().get_entities_by_type_and_tag(group, moab::MBENTITYSET, tags.data(), vals, tags.size(), group_sets);
   return (rval == moab::MB_SUCCESS);
 }
 
@@ -641,7 +641,7 @@ bool MoabInterface::set_tag_data(Tag tag, const EntityHandle* entityPtr,
                                  int num_handles, const void* const tag_data,
                                  int len) {
   reset_code();
-  rval = moab().tag_set_by_ptr(tag, entityPtr, num_handles, &tag_data, &len);
+  rval = mesh().tag_set_by_ptr(tag, entityPtr, num_handles, &tag_data, &len);
   return (rval == moab::MB_SUCCESS);
 
 }
@@ -664,7 +664,7 @@ Tag MoabInterface::get_tag(const char* name, int size, TagType store,
     flags |= moab::MB_TAG_EXCL;
 
   Tag retval = 0;
-  rval = moab().tag_get_handle(name, size, type, retval, flags, def_value);
+  rval = mesh().tag_get_handle(name, size, type, retval, flags, def_value);
   if (create_if_missing && moab::MB_SUCCESS != rval)
     std::cerr << "Couldn't find nor create tag named " << name << std::endl;
 

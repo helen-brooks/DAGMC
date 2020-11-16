@@ -4,17 +4,6 @@
 #include "Common.hpp"
 
 namespace DAGMC {
-class MeshInterface {
-
- public:
-
-  MeshInterface() {};
-  ~MeshInterface() {};
-
-  virtual bool load(std::string filename) = 0;
-  virtual bool write(std::string filename) = 0;
-
-};
 
 // Structures for Mesh Atrributes
 
@@ -48,5 +37,41 @@ class MeshContainer {
   virtual bool isNull() { return false; };
 
 };
+
+template < class MeshType >
+class MeshInterface {
+
+ public:
+
+  MeshInterface<MeshType>() {};
+  ~MeshInterface<MeshType>() {};
+
+  virtual bool load(std::string filename) = 0;
+  virtual bool write(std::string filename) = 0;
+
+  bool meshIsNull() {
+    if (container == nullptr)
+      return true;
+    else
+      return container->isNull();
+  };
+
+  MeshType& mesh() {
+    return container->mesh();
+  };
+  const MeshType& const_mesh() {
+    return container->const_mesh();
+  };
+
+  MeshType* mesh_ptr() { return container->ptr(); };
+  std::shared_ptr<MeshType> mesh_sptr() { return container->sptr(); };
+
+ protected:
+
+  // Container for the mesh
+  std::shared_ptr<MeshContainer<MeshType> > container;
+
+};
+
 
 #endif

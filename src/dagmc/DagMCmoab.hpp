@@ -322,9 +322,9 @@ class DagMCmoab : public DagMCBase {
   OrientedBoxTreeTool* obb_tree() {return (geom_tool())->obb_tree();}
   std::shared_ptr<GeomTopoTool> geom_tool() {return mesh_interface->gtt();}
   /** Get the instance of MOAB used by functions in this file. */
-  Interface* moab_instance() { return mesh_interface->moab_ptr();}
+  Interface* moab_instance() { return mesh_interface->mesh_ptr();}
   std::shared_ptr<Interface> moab_instance_sptr() {
-    return mesh_interface->moab_sptr();
+    return mesh_interface->mesh_sptr();
   }
 
   // ***************************************************************************

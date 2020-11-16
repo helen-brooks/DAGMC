@@ -32,7 +32,7 @@ class LibMeshInterfaceTest : public ::testing::Test {
   }
 
   // Data members required for tests
-  std::shared_ptr<DAGMC::MeshInterface> interface;
+  std::shared_ptr<DAGMC::LibMeshInterface> interface;
   std::vector<std::string> filenames;
 
 };

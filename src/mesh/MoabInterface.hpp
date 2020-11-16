@@ -64,7 +64,7 @@ class InternalMOAB : public MeshContainer<moab::Interface> {
 };
 
 
-class MoabInterface : public MeshInterface {
+class MoabInterface : public MeshInterface<moab::Interface> {
 
  public:
   MoabInterface(moab::Interface* moabPtrIn);
@@ -79,6 +79,8 @@ class MoabInterface : public MeshInterface {
 
   // Finish the setup of the geometry from an open file
   bool finish_setup();
+
+  // Find the geometry sets
   bool setup_geom();
   bool setup_indices();
 
@@ -98,11 +100,6 @@ class MoabInterface : public MeshInterface {
                                    bool checkval = false,
                                    int dimension = 0,
                                    std::string value = "");
-
-  // Retrieve references to moab
-  moab::Interface& moab() { return container->mesh(); };
-  moab::Interface* moab_ptr() { return container->ptr(); };
-  std::shared_ptr<moab::Interface> moab_sptr() { return container->sptr(); };
 
   // Return a copy of the topo tool
   std::shared_ptr<GeomTopoTool> gtt() { return GTT; };
@@ -200,9 +197,6 @@ class MoabInterface : public MeshInterface {
 
   // Reset the state of the MOAB error code.
   void reset_code() { rval = moab::MB_SUCCESS; };
-
-  // Container for the mesh
-  std::shared_ptr<MeshContainer<moab::Interface> > container;
 
   // Pointer to an instance of a GeomTopoTool
   std::shared_ptr<GeomTopoTool> GTT;
