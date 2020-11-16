@@ -109,8 +109,7 @@ class MoabInterface : public MeshInterface {
   // Return error code, but cast as DAGMC error code.
   ErrorCode code() { return ErrorCode(rval); };
 
-  // Get the name tag
-  // To-do: what is this for?
+  // Get some specific tags
   Tag name_tag() { return nameTag; };
 
   // Indexing methods

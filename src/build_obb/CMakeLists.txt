@@ -6,6 +6,7 @@ set(LINK_LIBS dagmc)
 set(LINK_LIBS_EXTERN_NAMES)
 
 include_directories(${CMAKE_SOURCE_DIR}/src/mesh)
+include_directories(${CMAKE_SOURCE_DIR}/src/geom)
 include_directories(${CMAKE_SOURCE_DIR}/src/dagmc)
 include_directories(${CMAKE_BINARY_DIR}/src/dagmc)
 

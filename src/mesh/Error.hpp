@@ -71,6 +71,26 @@ class ErrorHandler {
   ErrorCode _code;
 };
 
+#ifdef MOAB_TYPES_HPP
+class MoabErrHandler : public ErrorHandler {
+ public:
+  MoabErrHandler() {};
+  ~MoabErrHandler() {};
+
+  void checkSetErr(ErrorCode rval, std::string msg) override {
+    _code = ErrorCode(setMoabCode(rval, msg));
+    //possible exception handling here?
+    return;
+  };
+  //Wrapper for MOAB macro which contains a return moab::ErrorCode statement
+  moab::ErrorCode setMoabCode(ErrorCode rval, std::string msg) {
+    moab::ErrorCode mbcode = moab::ErrorCode(rval);
+    MB_CHK_SET_ERR(mbcode, msg);
+    return mbcode;
+  };
+};
+#endif
+
 }
 
 #endif

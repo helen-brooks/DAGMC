@@ -1,10 +1,5 @@
 #include "DagMCmoab.hpp"
 
-#ifdef DOUBLE_DOWN
-#include "RTI.hpp"
-#include "MOABRay.h"
-#endif
-
 //#define MB_OBB_TREE_TAG_NAME "OBB_TREE"
 
 namespace DAGMC {
@@ -23,48 +18,29 @@ const bool counting = false; /* controls counts of ray casts and pt_in_vols */
 
 DagMCmoab::DagMCmoab(std::shared_ptr<Interface> mb_impl, double overlap_tolerance, double p_numerical_precision) {
 
-#ifdef DOUBLE_DOWN
-  std::cout << "Using the DOUBLE-DOWN interface to Embree." << std::endl;
-#endif
-
-  // Create error handler
-  errHandler = std::make_unique<MoabErrHandler>();
-
   // Create an interface to MOAB
   mesh_interface = std::make_shared<MoabInterface>(mb_impl);
 
-  // Get the geometry topo tool
-  GTT  = mesh_interface->gtt();
-
-#ifdef DOUBLE_DOWN
-  ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT));
-#else
-  ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT.get()));
-#endif
-  this->set_overlap_thickness(overlap_tolerance);
-  this->set_numerical_precision(p_numerical_precision);
-
+  init(overlap_tolerance, p_numerical_precision);
 }
 
 DagMCmoab::DagMCmoab(Interface* mb_impl, double overlap_tolerance, double p_numerical_precision) {
 
-  // Create error handler
-  errHandler = std::make_unique<MoabErrHandler>();
-
   // Create an interface to MOAB
   mesh_interface = std::make_shared<MoabInterface>(mb_impl);
 
-  // Get the geometry topo tool
-  GTT  = mesh_interface->gtt();
+  init(overlap_tolerance, p_numerical_precision);
 
-#ifdef DOUBLE_DOWN
-  ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT));
-#else
-  ray_tracer = std::unique_ptr<RayTracer>(new RayTracer(GTT.get()));
-#endif
+}
+
+void DagMCmoab::init(double overlap_tolerance, double numerical_precision) {
+  // Create error handler
+  errHandler = std::make_unique<MoabErrHandler>();
+
+  ray_tracer = std::make_unique<DefaultRayTracer>(mesh_interface);
+
   this->set_overlap_thickness(overlap_tolerance);
-  this->set_numerical_precision(p_numerical_precision);
-
+  this->set_numerical_precision(numerical_precision);
 }
 
 // *****************************************************************************
@@ -95,29 +71,14 @@ ErrorCode DagMCmoab::load_existing_contents() {
 
 // Set up the implicit complement
 ErrorCode DagMCmoab::setup_impl_compl() {
-  // If it doesn't already exist, create implicit complement
-  // Create data structures for implicit complement
-  ErrorCode rval = ErrorCode(GTT->setup_implicit_complement());
-  if (DAG_SUCCESS != rval) {
-    std::cerr << "Failed to find or create implicit complement handle." << std::endl;
-    return rval;
-  }
-  return DAG_SUCCESS;
+  return ray_tracer->init_implicit_complement();
 }
 
 // initialise the obb tree
 ErrorCode DagMCmoab::init_OBBTree() {
 
-  // find all geometry sets
-  errHandler->checkSetErr(GTT->find_geomsets(),
-                          "Could not find the geometry sets");
-
-  // implicit complement
-  errHandler->checkSetErr(setup_impl_compl(),
-                          "Failed to setup the implicit complement");
-
-  // build obbs
-  errHandler->checkSetErr(setup_obbs(), "Failed to setup the OBBs");
+  // Setup ray tracer
+  errHandler->checkSetErr(ray_tracer->init(), "Failed to initialise ray tracer");
 
   // setup indices
   errHandler->checkSetErr(setup_indices(), "Failed to setup problem indices");
@@ -138,18 +99,7 @@ ErrorCode DagMCmoab::setup_indices() {
 
 // sets up the obb tree for the problem
 ErrorCode DagMCmoab::setup_obbs() {
-  // If we havent got an OBB Tree, build one.
-  if (!GTT->have_obb_tree()) {
-    std::cout << "Building acceleration data structures..." << std::endl;
-#ifdef DOUBLE_DOWN
-    errHandler->checkSetErr(ray_tracer->init(),
-                            "Failed to build obb trees");
-#else
-    errHandler->checkSetErr(GTT->construct_obb_trees(),
-                            "Failed to build obb trees");
-#endif
-  }
-  return DAG_SUCCESS;
+  return ray_tracer->init_obb();
 }
 
 // *****************************************************************************
@@ -162,15 +112,15 @@ ErrorCode DagMCmoab::ray_fire(const EntityHandle volume, const double point[3],
                               RayHistory* history,
                               double user_dist_limit, int ray_orientation,
                               OrientedBoxTreeTool::TrvStats* stats) {
-  return ErrorCode(ray_tracer->ray_fire(volume, point, dir, next_surf, next_surf_dist,
-                                        history, user_dist_limit, ray_orientation,
-                                        stats));
+  return ray_tracer->ray_fire(volume, point, dir, next_surf, next_surf_dist,
+                              history, user_dist_limit, ray_orientation,
+                              stats);
 }
 
 ErrorCode DagMCmoab::point_in_volume(const EntityHandle volume, const double xyz[3],
                                      int& result, const double* uvw,
                                      const RayHistory* history) {
-  return ErrorCode(ray_tracer->point_in_volume(volume, xyz, result, uvw, history));
+  return ray_tracer->point_in_volume(volume, xyz, result, uvw, history);
 }
 
 ErrorCode DagMCmoab::test_volume_boundary(const EntityHandle volume,
@@ -178,60 +128,59 @@ ErrorCode DagMCmoab::test_volume_boundary(const EntityHandle volume,
                                           const double xyz[3], const double uvw[3],
                                           int& result,
                                           const RayHistory* history) {
-  return ErrorCode(ray_tracer->test_volume_boundary(volume, surface, xyz, uvw, result,
-                                                    history));
+  return ray_tracer->test_volume_boundary(volume, surface, xyz, uvw, result,
+                                          history);
 }
 
 // use spherical area test to determine inside/outside of a polyhedron.
 ErrorCode DagMCmoab::point_in_volume_slow(EntityHandle volume, const double xyz[3],
                                           int& result) {
-  return ErrorCode(ray_tracer->point_in_volume_slow(volume, xyz, result));
+  return ray_tracer->point_in_volume_slow(volume, xyz, result);
 }
 
 // detemine distance to nearest surface
 ErrorCode DagMCmoab::closest_to_location(EntityHandle volume,
                                          const double coords[3], double& result,
                                          EntityHandle* surface) {
-  return ErrorCode(ray_tracer->closest_to_location(volume, coords, result, surface));
+  return ray_tracer->closest_to_location(volume, coords, result, surface);
 }
 
 // calculate volume of polyhedron
 ErrorCode DagMCmoab::measure_volume(EntityHandle volume, double& result) {
-  return ErrorCode(ray_tracer->measure_volume(volume, result));
+  return ray_tracer->measure_volume(volume, result);
 }
 
 // sum area of elements in surface
 ErrorCode DagMCmoab::measure_area(EntityHandle surface, double& result) {
-  return ErrorCode(ray_tracer->measure_area(surface, result));
-
+  return ray_tracer->measure_area(surface, result);
 }
 
 // get sense of surface(s) wrt volume
 ErrorCode DagMCmoab::surface_sense(EntityHandle volume, int num_surfaces,
                                    const EntityHandle* surfaces, int* senses_out) {
-  return ErrorCode(GTT->get_surface_senses(volume, num_surfaces, surfaces,
-                                           senses_out));
+  return ray_tracer->surface_sense(volume, num_surfaces, surfaces,
+                                   senses_out);
 }
 
 // get sense of surface(s) wrt volume
 ErrorCode DagMCmoab::surface_sense(EntityHandle volume, EntityHandle surface,
                                    int& sense_out) {
-  return ErrorCode(GTT->get_sense(surface, volume, sense_out));
+  return ray_tracer->surface_sense(surface, volume, sense_out);
 }
 
 ErrorCode DagMCmoab::get_angle(EntityHandle surf, const double in_pt[3],
                                double angle[3],
                                const RayHistory* history) {
-  return ErrorCode(ray_tracer->get_normal(surf, in_pt, angle, history));
+  return ray_tracer->get_normal(surf, in_pt, angle, history);
 }
 
 ErrorCode DagMCmoab::next_vol(EntityHandle surface, EntityHandle old_volume,
                               EntityHandle& new_volume) {
-  return ErrorCode(GTT->next_vol(surface, old_volume, new_volume));
+  return ray_tracer->next_vol(surface, old_volume, new_volume);
 }
 
 bool DagMCmoab::is_implicit_complement(EntityHandle volume) {
-  return GTT->is_implicit_complement(volume);
+  return ray_tracer->is_implicit_complement(volume);
 }
 
 // *****************************************************************************

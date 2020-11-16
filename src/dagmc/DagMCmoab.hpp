@@ -4,10 +4,10 @@
 // Headers
 #include "DagMCBase.hpp"
 #include "moab_interface.hpp"
+#include "DefaultRayTracer.hpp"
 
 //Forward  class declarations
 class RefEntity;
-class RayTracingInterface;
 
 // What is this for?
 struct DagmcVolData {
@@ -17,24 +17,6 @@ struct DagmcVolData {
 };
 
 namespace DAGMC {
-
-class MoabErrHandler : public ErrorHandler {
- public:
-  MoabErrHandler() {};
-  ~MoabErrHandler() {};
-
-  void checkSetErr(ErrorCode rval, std::string msg) override {
-    _code = ErrorCode(setMoabCode(rval, msg));
-    //possible exception handling here?
-    return;
-  };
-  //Wrapper for MOAB macro which contains a return moab::ErrorCode statement
-  moab::ErrorCode setMoabCode(ErrorCode rval, std::string msg) {
-    moab::ErrorCode mbcode = moab::ErrorCode(rval);
-    MB_CHK_SET_ERR(mbcode, msg);
-    return mbcode;
-  };
-};
 
 class DagMCmoab : public DagMCBase {
 
@@ -56,6 +38,8 @@ class DagMCmoab : public DagMCBase {
 
   /** Git revision of DAGMC */
   inline std::string git_sha() { return DAGMC_GIT_SHA; }
+
+  void init(double overlap_tolerance, double numerical_precision);
 
   /* SECTION I: Geometry Initialization */
 
@@ -168,6 +152,9 @@ class DagMCmoab : public DagMCBase {
   ErrorCode next_vol(EntityHandle surface, EntityHandle old_volume,
                      EntityHandle& new_volume) override;
 
+  bool is_implicit_complement(EntityHandle volume) override;
+
+
   /* SECTION III: Indexing & Cross-referencing */
  public:
   /* Most calling apps refer to geometric entities with a combination of
@@ -277,8 +264,6 @@ class DagMCmoab : public DagMCBase {
   ErrorCode prop_values(EntityHandle eh, const std::string& prop,
                         std::vector<std::string>& value) override;
 
-  bool is_implicit_complement(EntityHandle volume) override;
-
   // Non-inherited public!
 
   // To-Do is this needed? Find where called.
@@ -289,9 +274,9 @@ class DagMCmoab : public DagMCBase {
    * not sure what to do about the obb_tag, GTT has no concept of an obb_tag on EntitySets - PCS
    */
   Tag obb_tag() { return NULL; }
-  Tag geom_tag() { return GTT->get_geom_tag(); }
-  Tag id_tag() { return GTT->get_gid_tag(); }
-  Tag sense_tag() { return GTT->get_sense_tag(); }
+  Tag geom_tag() { return (geom_tool())->get_geom_tag(); }
+  Tag id_tag() { return (geom_tool())->get_gid_tag(); }
+  Tag sense_tag() { return (geom_tool())->get_sense_tag(); }
 
  private:
 
@@ -334,8 +319,8 @@ class DagMCmoab : public DagMCBase {
   ErrorCode get_root(EntityHandle vol_or_surf, EntityHandle& root);
 
   // public non-inherited: moab getter methods
-  OrientedBoxTreeTool* obb_tree() {return GTT->obb_tree();}
-  std::shared_ptr<GeomTopoTool> geom_tool() {return GTT;}
+  OrientedBoxTreeTool* obb_tree() {return (geom_tool())->obb_tree();}
+  std::shared_ptr<GeomTopoTool> geom_tool() {return mesh_interface->gtt();}
   /** Get the instance of MOAB used by functions in this file. */
   Interface* moab_instance() { return mesh_interface->moab_ptr();}
   std::shared_ptr<Interface> moab_instance_sptr() {
@@ -350,14 +335,6 @@ class DagMCmoab : public DagMCBase {
 
   // Interface to MOAB
   std::shared_ptr<MoabInterface> mesh_interface;
-
-  std::shared_ptr<GeomTopoTool> GTT;
-  // type alias for ray tracing engine
-#ifdef DOUBLE_DOWN
-  using RayTracer = RayTracingInterface;
-#else
-  using RayTracer = GeomQueryTool;
-#endif
 
   std::unique_ptr<RayTracer> ray_tracer;
 
@@ -378,24 +355,24 @@ class DagMCmoab : public DagMCBase {
 
 
 // ***************************************************************************
-// SECTION VI inline functiosn
+// SECTION VI inline functions
 // ***************************************************************************
 
 inline ErrorCode DagMCmoab::getobb(EntityHandle volume, double minPt[3], double maxPt[3]) {
-  errHandler->checkSetErr(GTT->get_bounding_coords(volume, minPt, maxPt),
+  errHandler->checkSetErr((geom_tool())->get_bounding_coords(volume, minPt, maxPt),
                           "Failed to get obb for volume");
   return DAG_SUCCESS;
 }
 
 inline ErrorCode DagMCmoab::getobb(EntityHandle volume, double center[3],
                                    double axis1[3], double axis2[3], double axis3[3]) {
-  errHandler->checkSetErr(GTT->get_obb(volume, center, axis1, axis2, axis3),
+  errHandler->checkSetErr((geom_tool())->get_obb(volume, center, axis1, axis2, axis3),
                           "Failed to get obb for volume");
   return DAG_SUCCESS;
 }
 
 inline ErrorCode DagMCmoab::get_root(EntityHandle vol_or_surf, EntityHandle& root) {
-  errHandler->checkSetErr(GTT->get_root(vol_or_surf, root),
+  errHandler->checkSetErr((geom_tool())->get_root(vol_or_surf, root),
                           "Failed to get obb root set of volume or surface");
   return DAG_SUCCESS;
 }
