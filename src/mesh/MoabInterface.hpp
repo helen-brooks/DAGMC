@@ -78,6 +78,7 @@ class MoabInterface : public MeshInterface {
   bool write(std::string filename) override;
 
   // Finish the setup of the geometry from an open file
+  bool finish_setup();
   bool setup_geom();
   bool setup_indices();
 
@@ -233,6 +234,9 @@ class MoabInterface : public MeshInterface {
 
   /** map from the canonical property names to the tags representing them */
   std::map<std::string, Tag> property_tagmap;
+
+  // Record if we have found geomsets or not.
+  bool foundGeomsets;
 
 };
 

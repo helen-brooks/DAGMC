@@ -30,6 +30,8 @@ void MoabInterface::init() {
   // Create a topo tool
   GTT = std::make_shared<GeomTopoTool>(moab_ptr(), false);
 
+  foundGeomsets = false;
+
 }
 
 bool MoabInterface::load(std::string filename) {
@@ -68,22 +70,36 @@ bool MoabInterface::load(std::string filename) {
   }
 
   // Finish setup of faceting tolerance and topological heirarchy
-  return setup_geom();
+  return finish_setup();
 }
 
-bool MoabInterface::setup_geom() {
+bool MoabInterface::finish_setup() {
 
   if (!set_faceting_tol()) {
     return false;
   }
 
   std::cout << "Initializing the GeomTopoTool..." << std::endl;
-  rval = GTT->find_geomsets();
+  return setup_geom();
 
-  return (rval == moab::MB_SUCCESS);
+}
+
+bool MoabInterface::setup_geom() {
+
+  // Don't unnecessarily repeat step
+  if (foundGeomsets)
+    return true;
+
+  reset_code();
+  rval = GTT->find_geomsets();
+  foundGeomsets = (rval == moab::MB_SUCCESS);
+  return foundGeomsets;
+
 }
 
 bool MoabInterface::setup_indices() {
+
+  reset_code();
 
   // Get all surfaces
   Range surfs;

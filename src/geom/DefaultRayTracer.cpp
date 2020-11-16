@@ -20,21 +20,18 @@ DefaultRayTracer::DefaultRayTracer(std::shared_ptr<MoabInterface> mesh_interface
 
 ErrorCode DefaultRayTracer::init() {
 
-  // find all geometry sets
-  errHandler->checkSetErr(GTT->find_geomsets(),
-                          "Could not find the geometry sets");
-
   // implicit complement
   errHandler->checkSetErr(init_implicit_complement(),
                           "Failed to setup the implicit complement");
 
   // build obbs
-  errHandler->checkSetErr(init_obb(), "Failed to setup the OBBs");
+  errHandler->checkSetErr(init_obb(), "Failed to set up the OBBs");
 
   return DAG_SUCCESS;
 }
 
 ErrorCode DefaultRayTracer::init_implicit_complement() {
+
   // If it doesn't already exist, create implicit complement
   // Create data structures for implicit complement
   ErrorCode rval = ErrorCode(GTT->setup_implicit_complement());

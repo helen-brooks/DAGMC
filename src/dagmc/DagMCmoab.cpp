@@ -61,7 +61,7 @@ ErrorCode DagMCmoab::load_file(const char* cfile) {
 // helper function to load the existing contents of a MOAB instance into DAGMC
 ErrorCode DagMCmoab::load_existing_contents() {
 
-  if (!mesh_interface->setup_geom()) {
+  if (!mesh_interface->finish_setup()) {
     return mesh_interface->code();
   }
 
@@ -76,6 +76,12 @@ ErrorCode DagMCmoab::setup_impl_compl() {
 
 // initialise the obb tree
 ErrorCode DagMCmoab::init_OBBTree() {
+
+  // Find all geometry sets
+  if (!mesh_interface->setup_geom()) {
+    errHandler->checkSetErr(mesh_interface->code(),
+                            "Could not find the geometry sets");
+  }
 
   // Setup ray tracer
   errHandler->checkSetErr(ray_tracer->init(), "Failed to initialise ray tracer");
