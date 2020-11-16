@@ -18,7 +18,7 @@ class DefaultRayTracer : public RayTracer {
 
  public:
 
-  DefaultRayTracer(std::shared_ptr<MoabInterface> mesh_interface);
+  DefaultRayTracer(std::shared_ptr<MoabInterface> mesh_interface, double overlap_tolerance, double numerical_precision);
   ~DefaultRayTracer() {};
 
   ErrorCode init() override;

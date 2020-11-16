@@ -344,8 +344,6 @@ class DagMCmoab : public DagMCBase {
   /* metadata */
   char implComplName[NAME_TAG_SIZE];
 
-  double facetingTolerance;
-
   /** vectors for point_in_volume: */
   std::vector<double> disList;
   std::vector<int> dirList;

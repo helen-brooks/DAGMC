@@ -2,7 +2,8 @@
 
 namespace DAGMC {
 
-DefaultRayTracer::DefaultRayTracer(std::shared_ptr<MoabInterface> mesh_interface) {
+DefaultRayTracer::DefaultRayTracer(std::shared_ptr<MoabInterface> mesh_interface,
+                                   double overlap_tolerance, double numerical_precision) {
 
   // Get the geometry topo tool
   GTT  = mesh_interface->gtt();
@@ -13,6 +14,9 @@ DefaultRayTracer::DefaultRayTracer(std::shared_ptr<MoabInterface> mesh_interface
 #else
   RTI = std::make_unique<RayTracingInterface>(GTT.get());
 #endif
+
+  set_overlap_thickness(overlap_tolerance);
+  set_numerical_precision(numerical_precision);
 
   errHandler = std::make_unique<MoabErrHandler>();
 

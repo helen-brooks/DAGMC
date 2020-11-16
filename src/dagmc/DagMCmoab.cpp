@@ -37,10 +37,8 @@ void DagMCmoab::init(double overlap_tolerance, double numerical_precision) {
   // Create error handler
   errHandler = std::make_unique<MoabErrHandler>();
 
-  ray_tracer = std::make_unique<DefaultRayTracer>(mesh_interface);
+  ray_tracer = std::make_unique<DefaultRayTracer>(mesh_interface, overlap_tolerance, numerical_precision);
 
-  this->set_overlap_thickness(overlap_tolerance);
-  this->set_numerical_precision(numerical_precision);
 }
 
 // *****************************************************************************
