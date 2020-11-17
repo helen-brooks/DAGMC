@@ -2,6 +2,7 @@
 #define DAG_MESH_INTERFACE_HPP
 
 #include "Common.hpp"
+#include "Types.hpp"
 
 namespace DAGMC {
 
@@ -19,7 +20,6 @@ struct MeshAttributes {
   std::map<intmax_t, SurfaceSenses > senseData;
   // Add more here as required
 };
-}
 
 // Wrapper to agnosticize whether mesh is internal or external
 template < class MeshType >
@@ -38,16 +38,36 @@ class MeshContainer {
 
 };
 
+
+class MeshInterfaceBase {
+
+ public:
+  MeshInterfaceBase() {};
+  ~MeshInterfaceBase() {};
+
+  // Read and write to file
+  virtual bool load(std::string filename) = 0;
+  virtual bool write(std::string filename) = 0;
+
+  // Finish the setup of the geometry from an open file
+  virtual bool finish_setup() = 0;
+
+  // Find the geometry sets
+  virtual bool setup_geom() = 0;
+  virtual bool setup_indices() = 0;
+
+  // Return the error code of the last operation
+  virtual ErrorCode code() = 0;
+
+};
+
 template < class MeshType >
-class MeshInterface {
+class MeshInterface : public MeshInterfaceBase {
 
  public:
 
   MeshInterface<MeshType>() {};
   ~MeshInterface<MeshType>() {};
-
-  virtual bool load(std::string filename) = 0;
-  virtual bool write(std::string filename) = 0;
 
   bool meshIsNull() {
     if (container == nullptr)
@@ -70,6 +90,7 @@ class MeshInterface {
 
   // Container for the mesh
   std::shared_ptr<MeshContainer<MeshType> > container;
+};
 
 };
 

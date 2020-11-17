@@ -23,11 +23,11 @@ class DagMCmoab : public DagMCBase {
  public:
 
   // Constructor
-  DagMCmoab(std::shared_ptr<Interface> mb_impl = nullptr, double overlap_tolerance = 0., double numerical_precision = .001);
+  DagMCmoab(std::shared_ptr<moab::Interface> mb_impl = nullptr, double overlap_tolerance = 0., double numerical_precision = .001);
 
   // Deprecated Constructor
   [[ deprecated("Replaced by DagMC(std::shared_ptr<Interface> mb_impl, ... )") ]]
-  DagMCmoab(Interface* mb_impl, double overlap_tolerance = 0., double numerical_precision = .001);
+  DagMCmoab(moab::Interface* mb_impl, double overlap_tolerance = 0., double numerical_precision = .001);
 
   // Destructor
   ~DagMCmoab() {};
@@ -41,122 +41,8 @@ class DagMCmoab : public DagMCBase {
 
   void init(double overlap_tolerance, double numerical_precision);
 
-  /* SECTION I: Geometry Initialization */
-
-  /** \brief Load a geometry description regardless of format
-   *
-   * This method will load the geometry file with name cfile.
-   * In case this is a solid model geometry file, it will pass
-   * the facet_tolerance option as guidance for the faceting engine.
-   * \param cfile the file name to be loaded
-   * \param facet_tolerance the faceting tolerance guidance for the faceting engine
-   * \return - MB_SUCCESS if file loads correctly
-   *        - other MB ErrorCodes returned from MOAB
-   *
-   * Note: When loading a prexisting file with an OBB_TREE tag, a number of unspoken
-   * things happen that one should be aware of.
-   *
-   * 1) The file is loaded and when we query the meshset, we find entities with the OBB_TREE tag
-   * 2) The OBBTreeTool assumes that any children of the entity being queried in a ray intersect sets
-   *      operation are fair game, the surface meshsets have triangles as members, but OBBs as children
-   *      but no querying is done, just assumptions that the tags exist.
-   */
-  ErrorCode load_file(const char* cfile) override;
-
-  /** \brief Use pre-loaded geometry set
-   *
-   * Works like load_file, but using data that has been externally
-   * loaded into DagMC's MOAB instance.
-   * Only one of the two functions should be called.
-   *
-   * TODO: this function should accept a parameter, being the
-   * entity set to use for DagMC's data.  Currently DagMC always
-   * assumes that all the contents of its MOAB instance belong to it.
-   */
-  ErrorCode load_existing_contents() override;
-
-  /** \brief finds or creates the implicit complement
-   *
-   * This method calls the GeomTopoTool->get_implicit_complement which will
-   * return the IC if it already exists. If the IC doesn't exist, it will
-   * create one.
-   */
-  ErrorCode setup_impl_compl() override;
-
-  /** \brief initializes the geometry and OBB tree structure for ray firing acceleration
-  *
-  * This method can be called after load_file to fully initialize DAGMC.  It calls
-  * methods to set up the geometry, create the implicit complement, generate an
-  * OBB tree from the faceted representation of the geometry, and build the
-  * cross-referencing indices.
-  */
-  ErrorCode init_OBBTree() override;
-
-  /** \brief constructs obb trees for all surfaces and volumes
-   *
-   * Very thin wrapper around GTT->construct_obb_trees().
-   * Constructs obb trees for all surfaces and volumes in the geometry.
-   * Called by init_OBBTree
-   */
-  ErrorCode setup_obbs() override;
-
-  /** Thin wrapper around build_indices().*/
-  ErrorCode setup_indices() override;
-
- private:
-
-  /* SECTION II: Fundamental Geometry Operations/Queries */
-  /* The methods in this section are thin wrappers around methods in the
-   *  GeometryQueryTool.
-   */
-
-  typedef GeomQueryTool::RayHistory RayHistory;
-
- public:
-
-  ErrorCode ray_fire(const EntityHandle volume, const double ray_start[3],
-                     const double ray_dir[3], EntityHandle& next_surf,
-                     double& next_surf_dist,
-                     RayHistory* history = NULL,
-                     double dist_limit = 0, int ray_orientation = 1,
-                     OrientedBoxTreeTool::TrvStats* stats = NULL) override;
-
-  ErrorCode point_in_volume(const EntityHandle volume, const double xyz[3],
-                            int& result, const double* uvw = NULL,
-                            const RayHistory* history = NULL) override;
-
-  ErrorCode point_in_volume_slow(const EntityHandle volume, const double xyz[3],
-                                 int& result) override;
-
-  ErrorCode test_volume_boundary(const EntityHandle volume,
-                                 const EntityHandle surface,
-                                 const double xyz[3], const double uvw[3],
-                                 int& result,
-                                 const RayHistory* history = NULL) override;
-
-  ErrorCode closest_to_location(EntityHandle volume, const double point[3],
-                                double& result, EntityHandle* surface = 0) override;
-  ErrorCode measure_volume(EntityHandle volume, double& result) override;
-
-  ErrorCode measure_area(EntityHandle surface, double& result) override;
-
-  ErrorCode surface_sense(EntityHandle volume, int num_surfaces,
-                          const EntityHandle* surfaces, int* senses_out) override;
-
-  ErrorCode surface_sense(EntityHandle volume, EntityHandle surface,
-                          int& sense_out) override;
-
-  ErrorCode get_angle(EntityHandle surf, const double xyz[3], double angle[3],
-                      const RayHistory* history = NULL) override;
-
-  ErrorCode next_vol(EntityHandle surface, EntityHandle old_volume,
-                     EntityHandle& new_volume) override;
-
-  bool is_implicit_complement(EntityHandle volume) override;
-
-
   /* SECTION III: Indexing & Cross-referencing */
- public:
+
   /* Most calling apps refer to geometric entities with a combination of
    *  base-1/0 ordinal index (or rank) and global ID (or name).
    *  DagMC also has an internal EntityHandle reference to each geometric entity.
@@ -184,24 +70,9 @@ class DagMCmoab : public DagMCBase {
   unsigned int num_entities(int dimension) override;
 
   /* SECTION IV: Handling DagMC settings */
- public:
 
   /** retrieve faceting tolerance */
-  double faceting_tolerance() override {
-    return mesh_interface->get_faceting_tol();
-  };
-  /** retrieve overlap thickness */
-  double overlap_thickness() override;
-  /** retrieve numerical precision */
-  double numerical_precision();
-  /** Attempt to set a new overlap thickness tolerance, first checking for sanity */
-  void set_overlap_thickness(double new_overlap_thickness) override;
-
-  /** Attempt to set a new numerical precision , first checking for sanity
-   *  Use of this function is discouraged; see top of DagMC.cpp
-   */
-  void set_numerical_precision(double new_precision);
-
+  double faceting_tolerance();
 
   /* SECTION V: Metadata handling */
 
@@ -268,15 +139,15 @@ class DagMCmoab : public DagMCBase {
 
   // To-Do is this needed? Find where called.
   /** get the tag for the "name" of a surface == global ID */
-  Tag name_tag() { return mesh_interface->name_tag(); }
+  moab::Tag name_tag() { return moab_interface->name_tag(); }
 
   /** Get the tag used to associate OBB trees with geometry in load_file(..).
    * not sure what to do about the obb_tag, GTT has no concept of an obb_tag on EntitySets - PCS
    */
-  Tag obb_tag() { return NULL; }
-  Tag geom_tag() { return (geom_tool())->get_geom_tag(); }
-  Tag id_tag() { return (geom_tool())->get_gid_tag(); }
-  Tag sense_tag() { return (geom_tool())->get_sense_tag(); }
+  moab::Tag obb_tag() { return NULL; }
+  moab::Tag geom_tag() { return (geom_tool())->get_geom_tag(); }
+  moab::Tag id_tag() { return (geom_tool())->get_gid_tag(); }
+  moab::Tag sense_tag() { return (geom_tool())->get_sense_tag(); }
 
  private:
 
@@ -309,22 +180,27 @@ class DagMCmoab : public DagMCBase {
 
  public:
 
-  ErrorCode write_mesh(const char* ffile) override;
   /** get the corners of the OBB for a given volume */
   ErrorCode getobb(EntityHandle volume, double minPt[3], double maxPt[3]) override;
+
   /** get the center point and three vectors for the OBB of a given volume */
   ErrorCode getobb(EntityHandle volume, double center[3],
                    double axis1[3], double axis2[3], double axis3[3]) override;
+
   /** get the root of the obbtree for a given entity */
   ErrorCode get_root(EntityHandle vol_or_surf, EntityHandle& root);
 
-  // public non-inherited: moab getter methods
-  OrientedBoxTreeTool* obb_tree() {return (geom_tool())->obb_tree();}
-  std::shared_ptr<GeomTopoTool> geom_tool() {return mesh_interface->gtt();}
+  // Public non-inherited: MOAB  getter methods
+
+  std::shared_ptr<moab::GeomTopoTool> geom_tool() {return moab_interface->gtt();}
+
+  moab::OrientedBoxTreeTool* obb_tree() {return (geom_tool())->obb_tree();}
+
   /** Get the instance of MOAB used by functions in this file. */
-  Interface* moab_instance() { return mesh_interface->mesh_ptr();}
-  std::shared_ptr<Interface> moab_instance_sptr() {
-    return mesh_interface->mesh_sptr();
+  moab::Interface* moab_instance() { return moab_interface->mesh_ptr();}
+
+  std::shared_ptr<moab::Interface> moab_instance_sptr() {
+    return moab_interface->mesh_sptr();
   }
 
   // ***************************************************************************
@@ -334,9 +210,7 @@ class DagMCmoab : public DagMCBase {
  private:
 
   // Interface to MOAB
-  std::shared_ptr<MoabInterface> mesh_interface;
-
-  std::unique_ptr<RayTracer> ray_tracer;
+  std::shared_ptr<MoabInterface> moab_interface;
 
   /** corresponding geometric entities; also indexed like rootSets */
   std::vector<RefEntity*> geomEntities;

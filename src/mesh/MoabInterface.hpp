@@ -3,7 +3,6 @@
 
 #include "MeshInterface.hpp"
 #include "Moab.hpp"
-#include "Error.hpp"
 
 namespace DAGMC {
 
@@ -25,7 +24,7 @@ class ExternalMOAB : public MeshContainer<moab::Interface> {
 class ExternalSharedMOAB : public MeshContainer<moab::Interface> {
 
  public:
-  ExternalSharedMOAB(std::shared_ptr<Interface> MBI_shared_ptr) {
+  ExternalSharedMOAB(std::shared_ptr<moab::Interface> MBI_shared_ptr) {
     moabPtr = MBI_shared_ptr;
   }
   ~ExternalSharedMOAB() {};
@@ -78,15 +77,15 @@ class MoabInterface : public MeshInterface<moab::Interface> {
   bool write(std::string filename) override;
 
   // Finish the setup of the geometry from an open file
-  bool finish_setup();
+  bool finish_setup() override;
 
   // Find the geometry sets
-  bool setup_geom();
-  bool setup_indices();
+  bool setup_geom() override;
+  bool setup_indices() override;
 
   // Settings
-  bool set_faceting_tol();
   double get_faceting_tol() { return facetingTolerance; };
+  bool set_faceting_tol();
 
   // Methods for retrieving and updating metadata
   bool update_properties(std::set< std::string >& prop_names, const char* delimiters);
@@ -102,13 +101,13 @@ class MoabInterface : public MeshInterface<moab::Interface> {
                                    std::string value = "");
 
   // Return a copy of the topo tool
-  std::shared_ptr<GeomTopoTool> gtt() { return GTT; };
+  std::shared_ptr<moab::GeomTopoTool> gtt() { return GTT; };
 
   // Return error code, but cast as DAGMC error code.
-  ErrorCode code() { return ErrorCode(rval); };
+  ErrorCode code() override { return ErrorCode(rval); };
 
   // Get some specific tags
-  Tag name_tag() { return nameTag; };
+  moab::Tag name_tag() { return nameTag; };
 
   // Indexing methods
 
@@ -135,13 +134,12 @@ class MoabInterface : public MeshInterface<moab::Interface> {
   */
   unsigned int num_entities(int dimension);
 
-
  private:
 
   /** a common type within the property and group name functions */
   typedef std::map<std::string, std::string> prop_map;
 
-  bool build_indices(Range& surfs, Range& vols);
+  bool build_indices(moab::Range& surfs, moab::Range& vols);
 
   // Return a map of tags given property names
   bool set_tagmap(std::set< std::string >& prop_names);
@@ -157,11 +155,11 @@ class MoabInterface : public MeshInterface<moab::Interface> {
                 const char* delimiters = "_") const;
 
   /** Add a string value to a property tag for a given entity */
-  bool append_packed_string(Tag, EntityHandle, std::string&);
+  bool append_packed_string(moab::Tag, EntityHandle, std::string&);
 
   // Methods for setting metadata
-  bool set_tag(Tag tag, EntityHandle eh, std::string& new_string);
-  bool set_tag_data(Tag tag, const EntityHandle* entityPtr,
+  bool set_tag(moab::Tag tag, EntityHandle eh, std::string& new_string);
+  bool set_tag_data(moab::Tag tag, const EntityHandle* entityPtr,
                     int num_handles, const void* const tag_data, int len);
   bool append_group_properties(const char* delimiters);
 
@@ -169,20 +167,20 @@ class MoabInterface : public MeshInterface<moab::Interface> {
   // Methods for fetching metadata values
   bool get_group_handles(std::vector<EntityHandle>& group_handles);
   bool get_group_props(EntityHandle group, std::string& name);
-  bool get_entity_sets(EntityHandle group, Range& group_sets);
-  bool get_tag(std::string& tagname, Tag& tag);
-  bool get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
+  bool get_entity_sets(EntityHandle group, moab::Range& group_sets);
+  bool get_tag(std::string& tagname, moab::Tag& tag);
+  bool get_tag_data(const moab::Tag& tag, const EntityHandle* entityPtr,
                     const int num_handles, void* tag_data);
-  bool get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values);
-  bool get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
+  bool get_tag_data_vec(moab::Tag tag, EntityHandle eh, std::vector<std::string>& values);
+  bool get_tag_data_arr(const moab::Tag& tag, const EntityHandle* entityPtr,
                         const int num_handles, const void** tag_data, int* len);
-  bool get_tag_name(Tag tag, EntityHandle eh, std::string& name);
-  Tag  get_tag(const char* name, int size, TagType store, DataType type,
-               const void* def_value = NULL, bool create_if_missing = true);
-  bool get_prop_tag(const std::string& prop, Tag& proptag);
-  bool get_tagged_entity_sets(EntityHandle group, Tag tag, Range& group_sets);
-  bool get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags,
-                              const void* const* vals, Range& group_sets);
+  bool get_tag_name(moab::Tag tag, EntityHandle eh, std::string& name);
+  moab::Tag  get_tag(const char* name, int size, moab::TagType store, moab::DataType type,
+                     const void* def_value = NULL, bool create_if_missing = true);
+  bool get_prop_tag(const std::string& prop, moab::Tag& proptag);
+  bool get_tagged_entity_sets(EntityHandle group, moab::Tag tag, moab::Range& group_sets);
+  bool get_tagged_entity_sets(EntityHandle group, std::vector<moab::Tag> tags,
+                              const void* const* vals, moab::Range& group_sets);
 
   // Convenience methods for accessing entity handles
   std::vector<EntityHandle>& surf_handles() {
@@ -199,13 +197,13 @@ class MoabInterface : public MeshInterface<moab::Interface> {
   void reset_code() { rval = moab::MB_SUCCESS; };
 
   // Pointer to an instance of a GeomTopoTool
-  std::shared_ptr<GeomTopoTool> GTT;
+  std::shared_ptr<moab::GeomTopoTool> GTT;
 
   // Store MOAB return values
   moab::ErrorCode rval;
 
-  Tag nameTag;
-  Tag facetingTolTag;
+  moab::Tag nameTag;
+  moab::Tag facetingTolTag;
 
   static const int null_delimiter_length = 1;
 
@@ -227,7 +225,7 @@ class MoabInterface : public MeshInterface<moab::Interface> {
   std::vector<int> entIndices;
 
   /** map from the canonical property names to the tags representing them */
-  std::map<std::string, Tag> property_tagmap;
+  std::map<std::string, moab::Tag> property_tagmap;
 
   // Record if we have found geomsets or not.
   bool foundGeomsets;

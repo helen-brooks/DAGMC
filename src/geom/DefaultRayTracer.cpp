@@ -116,7 +116,7 @@ ErrorCode DefaultRayTracer::ray_fire(const moab::EntityHandle volume,
                                      moab::GeomQueryTool::RayHistory* history,
                                      double user_dist_limit,
                                      int ray_orientation,
-                                     OrientedBoxTreeTool::TrvStats* stats) {
+                                     moab::OrientedBoxTreeTool::TrvStats* stats) {
   return ErrorCode(RTI->ray_fire(volume, point, dir, next_surf, next_surf_dist,
                                  history, user_dist_limit, ray_orientation,
                                  stats));

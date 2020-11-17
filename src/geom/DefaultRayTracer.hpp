@@ -11,7 +11,7 @@
 
 namespace DAGMC {
 #ifndef DOUBLE_DOWN
-using RayTracingInterface = GeomQueryTool;
+using RayTracingInterface = moab::GeomQueryTool;
 #endif
 
 class DefaultRayTracer : public RayTracer {
@@ -58,7 +58,7 @@ class DefaultRayTracer : public RayTracer {
                      moab::GeomQueryTool::RayHistory* history = 0,
                      double user_dist_limit = 0,
                      int ray_orientation = 1,
-                     OrientedBoxTreeTool::TrvStats* stats = NULL) override;
+                     moab::OrientedBoxTreeTool::TrvStats* stats = NULL) override;
 
   ErrorCode  closest_to_location(moab::EntityHandle volume,
                                  const double point[3],

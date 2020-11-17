@@ -15,14 +15,17 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 //#include <algorithm>
 //#include <ctype.h>
 //#include <stdlib.h>
 //#include <stdio.h>
 //#include <math.h>
-//#ifndef M_PI  /* windows */
-//# define M_PI 3.14159265358979323846
-//#endif
+
+// Define PI for windows systems
+#ifndef M_PI
+# define M_PI 3.14159265358979323846
+#endif
 
 #endif

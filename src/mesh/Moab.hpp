@@ -12,22 +12,6 @@
 #include "moab/Interface.hpp"
 #include "moab/Range.hpp"
 
-namespace DAGMC {
-// Some typedefs for commonly used moab types
-typedef moab::Core Core;
-typedef moab::Interface Interface;
-typedef moab::TagType TagType;
-typedef moab::DataType DataType;
-typedef moab::GeomTopoTool GeomTopoTool;
-typedef moab::GeomQueryTool GeomQueryTool;
-typedef moab::CartVect CartVect;
-typedef moab::EntityHandle EntityHandle;
-typedef moab::GeomQueryTool::RayHistory RayHistory;
-typedef moab::OrientedBoxTreeTool OrientedBoxTreeTool;
-typedef moab::Range Range;
-typedef moab::Tag Tag;
-}
-
 #endif
 
 

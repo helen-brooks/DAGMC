@@ -1,5 +1,5 @@
-#ifndef DAG_ERROR_HPP
-#define DAG_ERROR_HPP
+#ifndef DAG_TYPES_HPP
+#define DAG_TYPES_HPP
 
 #include "Moab.hpp"
 
@@ -37,7 +37,7 @@ enum ErrorCode {
   DAG_MULTIPLE_ENTITIES_FOUND,
   DAG_TAG_NOT_FOUND,
   DAG_FILE_DOES_NOT_EXIST,
-  DAG_FILE_WRITE_ERROR,
+  DAG_FILE_WRITE_ERROR
   DAG_NOT_IMPLEMENTED,
   DAG_ALREADY_ALLOCATED,
   DAG_VARIABLE_DATA_LENGTH,
@@ -90,6 +90,13 @@ class MoabErrHandler : public ErrorHandler {
   };
 };
 #endif
+
+#ifdef LIBMESH
+using EntityHandle = uintmax_t;
+#else
+using EntityHandle = moab::EntityHandle;
+#endif
+
 
 }
 

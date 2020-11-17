@@ -49,7 +49,7 @@ ErrorCode overlap_test_tracking(DAGMC::DagMCmoab*);
 ErrorCode write_geometry(const char* output_file_name) {
   ErrorCode mbcode;
 
-  Interface* moab = new Core();
+  moab::Interface* moab = new Core();
 
   // Define a 2x2x2 cube centered at orgin
   // with concavity in +Z face.
@@ -158,7 +158,7 @@ ErrorCode write_geometry(const char* output_file_name) {
 
 ErrorCode overlap_write_geometry(const char* output_file_name) {
   ErrorCode mbcode;
-  Interface* moab = new Core();
+  moab::Interface* moab = new Core();
 
   // Define two 1x2x2 cubes that overlap from 0 <= x <= 0.01
   // cube 0 centered at (0.5,0,0)
@@ -399,7 +399,7 @@ int main(int argc, char* argv[]) {
 
 ErrorCode test_surface_sense(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range surfs, vols;
@@ -433,7 +433,7 @@ ErrorCode test_surface_sense(DAGMC::DagMCmoab* dagmc) {
 
 ErrorCode overlap_test_surface_sense(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range surfs, vols;
@@ -470,7 +470,7 @@ ErrorCode overlap_test_surface_sense(DAGMC::DagMCmoab* dagmc) {
 }
 ErrorCode test_measure_volume(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range vols;
@@ -500,7 +500,7 @@ ErrorCode test_measure_volume(DAGMC::DagMCmoab* dagmc) {
 }
 ErrorCode overlap_test_measure_volume(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range vols;
@@ -533,7 +533,7 @@ ErrorCode overlap_test_measure_volume(DAGMC::DagMCmoab* dagmc) {
 
 ErrorCode test_measure_area(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range surfs;
@@ -576,7 +576,7 @@ ErrorCode test_measure_area(DAGMC::DagMCmoab* dagmc) {
 
 ErrorCode overlap_test_measure_area(DAGMC::DagMCmoab* dagmc) {
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range surfs;
@@ -654,7 +654,7 @@ ErrorCode test_ray_fire(DAGMC::DagMCmoab* dagmc) {
   };
 
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range surfs, vols;
@@ -700,7 +700,7 @@ ErrorCode test_ray_fire(DAGMC::DagMCmoab* dagmc) {
 
     double dist;
     EntityHandle result;
-    DAGMC::RayHistory history;
+    moab::GeomQueryTool::RayHistory history;
     mbcode = ErrorCode(dagmc->ray_fire(vols.front(),
                                        tests[i].origin, tests[i].direction,
                                        result, dist, &history));
@@ -710,7 +710,7 @@ ErrorCode test_ray_fire(DAGMC::DagMCmoab* dagmc) {
       idx = p - surf;
       int id = idx > 5 ? 0 : ids[idx];
 
-      std::cerr << "Rayfire test failed for " << std::endl
+      std::cerr << "GeomQueryTool::Rayfire test failed for " << std::endl
                 << "\t ray from (" << tests[i].origin[0]
                 << ", " << tests[i].origin[1] << ", "
                 << tests[i].origin[2] << ") going ["
@@ -727,17 +727,17 @@ ErrorCode test_ray_fire(DAGMC::DagMCmoab* dagmc) {
 
     CartVect loc = CartVect(tests[i].origin) + (dist * CartVect(tests[i].direction));
 
-    std::vector< std::pair<int, DAGMC::RayHistory*> > boundary_tests;
+    std::vector< std::pair<int, moab::GeomQueryTool::RayHistory*> > boundary_tests;
     boundary_tests.push_back(std::make_pair(1, &history));
     boundary_tests.push_back(std::make_pair(0, &history));
-    boundary_tests.push_back(std::make_pair(1, (DAGMC::RayHistory*)NULL));
-    boundary_tests.push_back(std::make_pair(0, (DAGMC::RayHistory*)NULL));
+    boundary_tests.push_back(std::make_pair(1, (moab::GeomQueryTool::RayHistory*)NULL));
+    boundary_tests.push_back(std::make_pair(0, (moab::GeomQueryTool::RayHistory*)NULL));
 
 
     for (unsigned int bt = 0; bt < boundary_tests.size(); ++bt) {
 
       int expected = boundary_tests[bt].first;
-      DAGMC::RayHistory* h = boundary_tests[bt].second;
+      moab::GeomQueryTool::RayHistory* h = boundary_tests[bt].second;
 
       // pick the direction based on expected result of test. Either reuse the ray_fire
       // vector, or reverse it to check for a vector that enters the cell
@@ -806,7 +806,7 @@ ErrorCode overlap_test_ray_fire(DAGMC::DagMCmoab* dagmc) {
   };
 
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range surfs, vols;
@@ -917,7 +917,7 @@ ErrorCode test_point_in_volume(DAGMC::DagMCmoab* dagmc) {
   const int num_test = sizeof(tests) / sizeof(tests[0]);
 
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
 
@@ -1002,7 +1002,7 @@ ErrorCode overlap_test_point_in_volume(DAGMC::DagMCmoab* dagmc) {
   const int num_test = sizeof(tests) / sizeof(tests[0]);
 
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
 
   Tag dim_tag = dagmc->geom_tag();
   Range vols;
@@ -1067,7 +1067,7 @@ ErrorCode overlap_test_tracking(DAGMC::DagMCmoab* dagmc) {
   const int two = 2, three = 3;
   const void* ptrs[] = { &two, &three };
   ErrorCode mbcode;
-  Interface* moab = dagmc->moab_instance();
+  moab::Interface* moab = dagmc->moab_instance();
   mbcode = moab->get_entities_by_type_and_tag(0, MBENTITYSET, &dim_tag,
                                               ptrs, 1, surfs);
   CHKERR;
@@ -1104,7 +1104,7 @@ ErrorCode overlap_test_tracking(DAGMC::DagMCmoab* dagmc) {
   // get next surface
   double dist;
   EntityHandle next_surf;
-  DAGMC::RayHistory history;
+  moab::GeomQueryTool::RayHistory history;
   mbcode = ErrorCode(dagmc->ray_fire(vol, point, dir, next_surf, dist, &history));
   CHKERR;
   double expected_dist = 0.91;

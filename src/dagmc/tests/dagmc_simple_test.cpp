@@ -27,7 +27,7 @@ TEST_F(DagmcSimpleTest, DAG_load_file) {
 TEST_F(DagmcSimpleTest, DAG_load_file_dagmc) {
   /* 1 - Test with external moab, load file in DAGMC*/
   // make new moab core
-  std::shared_ptr<Interface> mbi = std::make_shared<Core>();
+  std::shared_ptr<moab::Interface> mbi = std::make_shared<moab::Core>();
   // make new dagmc into that moab
   std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);
 
@@ -44,7 +44,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_via_moab) {
   moab::ErrorCode mbcode;
   ErrorCode rval;
 
-  std::shared_ptr<Interface> mbi = std::make_shared<Core>();
+  std::shared_ptr<moab::Interface> mbi = std::make_shared<moab::Core>();
   mbcode = mbi->load_file(input_file);
   EXPECT_EQ(mbcode, moab::MB_SUCCESS);
   std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);
@@ -68,7 +68,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_build_obb) {
   // make new moab core
   ErrorCode rval;
 
-  std::shared_ptr<Interface> mbi = std::make_shared<Core>();
+  std::shared_ptr<moab::Interface> mbi = std::make_shared<moab::Core>();
   // make new dagmc into that moab
   std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);
 
@@ -85,7 +85,7 @@ TEST_F(DagmcSimpleTest, dagmc_load_file_dagmc_via_moab_build_obb) {
   moab::ErrorCode mbcode;
   ErrorCode rval;
 
-  std::shared_ptr<Interface> mbi = std::make_shared<Core>();
+  std::shared_ptr<moab::Interface> mbi = std::make_shared<moab::Core>();
   mbcode = mbi->load_file(input_file);
   EXPECT_EQ(mbcode, moab::MB_SUCCESS);
   std::shared_ptr<DagMCBase> dagmc = std::make_shared<DagMCmoab>(mbi);

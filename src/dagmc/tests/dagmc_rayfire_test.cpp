@@ -65,7 +65,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_exit) {
-  DAGMC::RayHistory history;
+  moab::GeomQueryTool::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction
@@ -79,7 +79,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_exit) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_entrance) {
-  DAGMC::RayHistory history;
+  moab::GeomQueryTool::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction
@@ -93,7 +93,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_orient_entrance) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_history_fail) {
-  DAGMC::RayHistory history;
+  moab::GeomQueryTool::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction
@@ -120,7 +120,7 @@ TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_history_fail) {
 }
 
 TEST_F(DagmcRayFireTest, dagmc_outside_face_rayfire_history) {
-  DAGMC::RayHistory history;
+  moab::GeomQueryTool::RayHistory history;
   int vol_idx = 1;
   EntityHandle vol_h = DAG->entity_by_index(3, vol_idx);
   double dir[3] = {1.0, 0.0, 0.0}; // ray along x direction

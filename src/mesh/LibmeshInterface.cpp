@@ -47,6 +47,19 @@ bool LibMeshInterface::write(std::string filename) {
   return false;
 }
 
+bool LibMeshInterface::finish_setup() {
+  throw std::logic_error("Function is not yet implemented");
+  return false;
+}
+bool LibMeshInterface::setup_geom() {
+  throw std::logic_error("Function is not yet implemented");
+  return false;
+}
+bool LibMeshInterface::setup_indices() {
+  throw std::logic_error("Function is not yet implemented");
+  return false;
+}
+
 
 // *****************************************************************************
 // PRIVATE METHODS

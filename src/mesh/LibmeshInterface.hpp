@@ -6,7 +6,6 @@
 #ifdef LIBMESH
 #include "Libmesh.hpp"
 
-
 namespace DAGMC {
 
 // Saves a reference to an external mesh
@@ -46,7 +45,6 @@ class InternalMesh : public MeshContainer<libMesh::MeshBase> {
 
 };
 
-
 class LibMeshInterface : public MeshInterface<libMesh::MeshBase> {
  public:
 
@@ -59,8 +57,18 @@ class LibMeshInterface : public MeshInterface<libMesh::MeshBase> {
   ~LibMeshInterface() {};
 
   // Load data from filename into memory
-  virtual bool load(std::string filename) override;
-  virtual bool write(std::string filename) override;
+  bool load(std::string filename) override;
+  bool write(std::string filename) override;
+
+  // Finish the setup of the geometry from an open file
+  bool finish_setup() override;
+
+  // Find the geometry sets
+  bool setup_geom() override;
+  bool setup_indices() override;
+
+  // Return the error code of the last operation
+  ErrorCode code() override { return DAG_NOT_IMPLEMENTED; }
 
   // Get a copy of sense data
   std::map<intmax_t, SurfaceSenses > getSenseData() {

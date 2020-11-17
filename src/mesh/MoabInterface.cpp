@@ -28,7 +28,7 @@ void MoabInterface::init() {
   reset_code();
 
   // Create a topo tool
-  GTT = std::make_shared<GeomTopoTool>(mesh_ptr(), false);
+  GTT = std::make_shared<moab::GeomTopoTool>(mesh_ptr(), false);
 
   foundGeomsets = false;
 
@@ -102,7 +102,7 @@ bool MoabInterface::setup_indices() {
   reset_code();
 
   // Get all surfaces
-  Range surfs;
+  moab::Range surfs;
   rval = GTT->get_gsets_by_dimension(2, surfs);
   if (rval != moab::MB_SUCCESS) {
     std::cerr << "Could not get surfaces from GTT" << std::endl;
@@ -110,7 +110,7 @@ bool MoabInterface::setup_indices() {
   }
 
   // get all volumes
-  Range vols;
+  moab::Range vols;
   rval = GTT->get_gsets_by_dimension(3, vols);
   if (rval != moab::MB_SUCCESS) {
     std::cerr << "Could not get volumes from GTT" << std::endl;
@@ -121,7 +121,7 @@ bool MoabInterface::setup_indices() {
 }
 
 
-bool MoabInterface::build_indices(Range& surfs, Range& vols) {
+bool MoabInterface::build_indices(moab::Range& surfs, moab::Range& vols) {
 
   reset_code();
 
@@ -149,7 +149,7 @@ bool MoabInterface::build_indices(Range& surfs, Range& vols) {
   *(iter++) = 0;
   std::copy(surfs.begin(), surfs.end(), iter);
   int idx = 1;
-  for (Range::iterator rit = surfs.begin(); rit != surfs.end(); ++rit)
+  for (moab::Range::iterator rit = surfs.begin(); rit != surfs.end(); ++rit)
     entIndices[*rit - setOffset] = idx++;
 
   vol_handles().resize(vols.size() + 1);
@@ -161,7 +161,7 @@ bool MoabInterface::build_indices(Range& surfs, Range& vols) {
   *(iter++) = 0;
   std::copy(vols.begin(), vols.end(), iter);
   idx = 1;
-  for (Range::iterator rit = vols.begin(); rit != vols.end(); ++rit)
+  for (moab::Range::iterator rit = vols.begin(); rit != vols.end(); ++rit)
     entIndices[*rit - setOffset] = idx++;
 
   // Get group handles
@@ -207,7 +207,7 @@ bool MoabInterface::set_faceting_tol() {
                            moab::MB_TYPE_DOUBLE);
 
   // search for a tag that has the faceting tolerance
-  Range tagged_sets;
+  moab::Range tagged_sets;
   double facet_tol_tagvalue = 0;
   bool tagged = false;
   EntityHandle root = 0;
@@ -255,7 +255,7 @@ bool MoabInterface::update_properties(std::set< std::string >& prop_names, const
 
 bool MoabInterface::get_property(EntityHandle eh, const std::string& prop, std::string& value) {
 
-  Tag proptag;
+  moab::Tag proptag;
   if (!get_prop_tag(prop, proptag))
     return false;
 
@@ -264,7 +264,7 @@ bool MoabInterface::get_property(EntityHandle eh, const std::string& prop, std::
 
 bool MoabInterface::get_properties(EntityHandle eh, const std::string& prop, std::vector< std::string >& values) {
 
-  Tag proptag;
+  moab::Tag proptag;
   if (!get_prop_tag(prop, proptag))
     return false;
 
@@ -286,7 +286,7 @@ bool MoabInterface::set_tagmap(std::set< std::string >& prop_names) {
     std::string tagname("DAGMCPROP_");
     tagname += prop_name;
 
-    Tag new_tag;
+    moab::Tag new_tag;
     if (!get_tag(tagname, new_tag)) {
       return false;
     }
@@ -304,19 +304,19 @@ bool MoabInterface::get_ents_and_vals_with_prop(const std::string& prop,
                                                 int dimension,
                                                 std::string value) {
 
-  Tag proptag;
+  moab::Tag proptag;
   if (!get_prop_tag(prop, proptag)) {
     return false;
   }
 
-  Range all_ents;
+  moab::Range all_ents;
   EntityHandle root = 0;
   if (checkval) {
     // Note that we cannot specify values for proptag here-- the passed value,
     // if it exists, may be only a subset of the packed string representation
     // of this tag.
     void* vals[2] = {NULL, (dimension != 0) ? &dimension : NULL };
-    std::vector<Tag> tags = {proptag, GTT->get_geom_tag()};
+    std::vector<moab::Tag> tags = {proptag, GTT->get_geom_tag()};
     if (!get_tagged_entity_sets(root, tags, vals, all_ents)) {
       return false;
     }
@@ -357,7 +357,7 @@ bool MoabInterface::append_group_properties(const char* delimiters) {
         return false;
     }
 
-    Range group_sets;
+    moab::Range group_sets;
     if (!get_entity_sets(group, group_sets))
       return false;
     else if (group_sets.empty())
@@ -368,7 +368,7 @@ bool MoabInterface::append_group_properties(const char* delimiters) {
       std::string groupval = prop.second;
 
       if (property_tagmap.find(groupkey) != property_tagmap.end()) {
-        Tag proptag = property_tagmap[groupkey];
+        moab::Tag proptag = property_tagmap[groupkey];
         for (auto& groupset : group_sets) {
           if (!append_packed_string(proptag, groupset, groupval))
             return false;
@@ -447,7 +447,7 @@ void MoabInterface::tokenize(const std::string& str,
 }
 
 // TODO improve this C-style code...
-bool MoabInterface::append_packed_string(Tag tag, EntityHandle eh,
+bool MoabInterface::append_packed_string(moab::Tag tag, EntityHandle eh,
                                          std::string& new_string) {
 
   reset_code();
@@ -501,15 +501,15 @@ bool MoabInterface::append_packed_string(Tag tag, EntityHandle eh,
 
 bool MoabInterface::get_group_handles(std::vector<EntityHandle>& group_handles) {
 
-  Tag category_tag = get_tag(CATEGORY_TAG_NAME, CATEGORY_TAG_SIZE,
-                             moab::MB_TAG_SPARSE, moab::MB_TYPE_OPAQUE);
+  moab::Tag category_tag = get_tag(CATEGORY_TAG_NAME, CATEGORY_TAG_SIZE,
+                                   moab::MB_TAG_SPARSE, moab::MB_TYPE_OPAQUE);
   char group_category[CATEGORY_TAG_SIZE];
   std::fill(group_category, group_category + CATEGORY_TAG_SIZE, '\0');
   sprintf(group_category, "%s", "Group");
   const void* const group_val[] = {&group_category};
 
-  Range groups;
-  if (!get_tagged_entity_sets(0, std::vector<Tag>(1, category_tag), group_val, groups))
+  moab::Range groups;
+  if (!get_tagged_entity_sets(0, std::vector<moab::Tag>(1, category_tag), group_val, groups))
     return false;
 
   group_handles.resize(groups.size() + 1);
@@ -519,7 +519,7 @@ bool MoabInterface::get_group_handles(std::vector<EntityHandle>& group_handles) 
   return true;
 }
 
-bool MoabInterface::get_prop_tag(const std::string& prop, Tag& proptag) {
+bool MoabInterface::get_prop_tag(const std::string& prop, moab::Tag& proptag) {
 
   reset_code();
 
@@ -534,7 +534,7 @@ bool MoabInterface::get_prop_tag(const std::string& prop, Tag& proptag) {
 }
 
 
-bool MoabInterface::get_tag(std::string& tagname, Tag& tag) {
+bool MoabInterface::get_tag(std::string& tagname, moab::Tag& tag) {
 
   reset_code();
 
@@ -548,7 +548,7 @@ bool MoabInterface::get_tag(std::string& tagname, Tag& tag) {
 
 }
 
-bool MoabInterface::get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
+bool MoabInterface::get_tag_data(const moab::Tag& tag, const EntityHandle* entityPtr,
                                  const int num_handles, void* tag_data) {
 
   reset_code();
@@ -557,7 +557,7 @@ bool MoabInterface::get_tag_data(const Tag& tag, const EntityHandle* entityPtr,
 
 }
 
-bool MoabInterface::get_tag_data_arr(const Tag& tag, const EntityHandle* entityPtr,
+bool MoabInterface::get_tag_data_arr(const moab::Tag& tag, const EntityHandle* entityPtr,
                                      const int num_handles, const void** data, int* len) {
 
   reset_code();
@@ -566,7 +566,7 @@ bool MoabInterface::get_tag_data_arr(const Tag& tag, const EntityHandle* entityP
 
 }
 
-bool MoabInterface::get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::string>& values) {
+bool MoabInterface::get_tag_data_vec(moab::Tag tag, EntityHandle eh, std::vector<std::string>& values) {
 
   const void* data;
   int len;
@@ -586,7 +586,7 @@ bool MoabInterface::get_tag_data_vec(Tag tag, EntityHandle eh, std::vector<std::
 
 }
 
-bool MoabInterface::get_tag_name(Tag tag, EntityHandle eh, std::string& name) {
+bool MoabInterface::get_tag_name(moab::Tag tag, EntityHandle eh, std::string& name) {
 
   reset_code();
   const void* data;
@@ -607,7 +607,7 @@ bool MoabInterface::get_group_props(EntityHandle group, std::string& name) {
 
 }
 
-bool MoabInterface::get_entity_sets(EntityHandle group, Range& group_sets) {
+bool MoabInterface::get_entity_sets(EntityHandle group, moab::Range& group_sets) {
 
   reset_code();
   rval = mesh().get_entities_by_type(group, moab::MBENTITYSET, group_sets);
@@ -615,13 +615,13 @@ bool MoabInterface::get_entity_sets(EntityHandle group, Range& group_sets) {
 
 }
 
-bool MoabInterface::get_tagged_entity_sets(EntityHandle group, Tag tag, Range& group_sets) {
+bool MoabInterface::get_tagged_entity_sets(EntityHandle group, moab::Tag tag, moab::Range& group_sets) {
 
-  return get_tagged_entity_sets(group, std::vector<Tag>(1, tag), nullptr, group_sets);
+  return get_tagged_entity_sets(group, std::vector<moab::Tag>(1, tag), nullptr, group_sets);
 
 }
 
-bool MoabInterface::get_tagged_entity_sets(EntityHandle group, std::vector<Tag> tags, const void* const* vals, Range& group_sets) {
+bool MoabInterface::get_tagged_entity_sets(EntityHandle group, std::vector<moab::Tag> tags, const void* const* vals, moab::Range& group_sets) {
 
   reset_code();
   rval = mesh().get_entities_by_type_and_tag(group, moab::MBENTITYSET, tags.data(), vals, tags.size(), group_sets);
@@ -629,7 +629,7 @@ bool MoabInterface::get_tagged_entity_sets(EntityHandle group, std::vector<Tag> 
 }
 
 
-bool MoabInterface::set_tag(Tag tag, EntityHandle eh, std::string& new_string) {
+bool MoabInterface::set_tag(moab::Tag tag, EntityHandle eh, std::string& new_string) {
 
   int len = new_string.length() + null_delimiter_length;
   const void* data = new_string.c_str();
@@ -637,7 +637,7 @@ bool MoabInterface::set_tag(Tag tag, EntityHandle eh, std::string& new_string) {
 
 }
 
-bool MoabInterface::set_tag_data(Tag tag, const EntityHandle* entityPtr,
+bool MoabInterface::set_tag_data(moab::Tag tag, const EntityHandle* entityPtr,
                                  int num_handles, const void* const tag_data,
                                  int len) {
   reset_code();
@@ -650,9 +650,9 @@ bool MoabInterface::set_tag_data(Tag tag, const EntityHandle* entityPtr,
 // PRIVATE METHODS
 // *****************************************************************************
 
-Tag MoabInterface::get_tag(const char* name, int size, TagType store,
-                           DataType type, const void* def_value,
-                           bool create_if_missing) {
+moab::Tag MoabInterface::get_tag(const char* name, int size, moab::TagType store,
+                                 moab::DataType type, const void* def_value,
+                                 bool create_if_missing) {
 
   reset_code();
   unsigned flags = store | moab::MB_TAG_CREAT;
@@ -663,7 +663,7 @@ Tag MoabInterface::get_tag(const char* name, int size, TagType store,
   if (!create_if_missing)
     flags |= moab::MB_TAG_EXCL;
 
-  Tag retval = 0;
+  moab::Tag retval = 0;
   rval = mesh().tag_get_handle(name, size, type, retval, flags, def_value);
   if (create_if_missing && moab::MB_SUCCESS != rval)
     std::cerr << "Couldn't find nor create tag named " << name << std::endl;
